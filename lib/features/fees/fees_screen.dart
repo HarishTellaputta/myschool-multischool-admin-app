@@ -198,18 +198,28 @@ class _FeesScreenState extends State<FeesScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      isLoading = true;
-      isSummaryLoading = true;
-      errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        isSummaryLoading = true;
+        errorMessage = null;
+      });
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
+
       final token = prefs.getString('jwt_token');
+      final schoolIdValue = prefs.get('school_id');
 
       if (token == null || token.trim().isEmpty) {
         throw Exception('Session expired. Please login again.');
+      }
+
+      final schoolId = int.tryParse(schoolIdValue?.toString() ?? '');
+
+      if (schoolId == null || schoolId <= 0) {
+        throw Exception('School ID not found. Please login again.');
       }
 
       final classService = ClassService(apiClient);
@@ -225,7 +235,6 @@ class _FeesScreenState extends State<FeesScreen> {
           sortBy: 'id',
           sortDirection: 'asc',
         ),
-        //  _feeService.getFeeStructures(),
       ]);
 
       if (!mounted) return;
@@ -237,7 +246,6 @@ class _FeesScreenState extends State<FeesScreen> {
         dashboardSummary = results[1] as FeeDashboardSummaryModel;
         classes = results[2] as List<SchoolClass>;
         students = studentPage.content;
-        //feeStructures = results[4] as List<dynamic>;
 
         isLoading = false;
         isSummaryLoading = false;

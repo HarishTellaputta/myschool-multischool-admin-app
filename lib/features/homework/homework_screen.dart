@@ -20,6 +20,7 @@ class _HomeworkScreenState extends State<HomeworkScreen> {
 
   bool isLoading = true;
   bool isSaving = false;
+  int? _schoolId;
 
   String selectedClass = 'All Classes';
   String selectedSubject = 'All Subjects';
@@ -57,7 +58,21 @@ class _HomeworkScreenState extends State<HomeworkScreen> {
       if (token == null || token.isEmpty) {
         throw Exception('JWT token not found.');
       }
+      final schoolIdValue = prefs.get('school_id');
 
+      if (token == null || token.isEmpty) {
+        throw Exception('Session expired. Please login again.');
+      }
+
+      final schoolId = schoolIdValue is int
+          ? schoolIdValue
+          : int.tryParse(schoolIdValue?.toString() ?? '');
+
+      if (schoolId == null || schoolId <= 0) {
+        throw Exception('School ID not found. Please login again.');
+      }
+
+      _schoolId = schoolId;
       _service.setToken(token);
 
       final data = await _service.getAllHomework();

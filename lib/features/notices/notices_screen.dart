@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
- import '../notices/services/notice_service.dart';
+import '../notices/services/notice_service.dart';
 import '../notices/models/notice_model.dart';
 
 class NoticesScreen extends StatefulWidget {
@@ -52,6 +52,18 @@ class _NoticesScreenState extends State<NoticesScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
+
+      final schoolId = prefs.getInt('school_id');
+
+      if (schoolId == null || schoolId <= 0) {
+        if (!mounted) return;
+
+        setState(() {
+          isLoading = false;
+          errorMessage = 'School ID not found. Please login again.';
+        });
+        return;
+      }
 
       if (token == null || token.trim().isEmpty) {
         if (!mounted) return;
@@ -114,18 +126,15 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }
 
   List<NoticeModel> get filteredNotices {
-    if (selectedCategory == 'All') {
-      return notices;
-    }
-
-    return notices
-        .where(
-          (notice) =>
-              notice.category!.toLowerCase() ==
-              selectedCategory.toLowerCase(),
-        )
-        .toList();
+  if (selectedCategory == 'All') {
+    return notices;
   }
+
+  return notices.where((notice) {
+    return (notice.category ?? '').toLowerCase() ==
+        selectedCategory.toLowerCase();
+  }).toList();
+}
 
   int get publishedCount {
     return notices
@@ -171,11 +180,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF2563EB),
-            Color(0xFF1D4ED8),
-            Color(0xFF1E40AF),
-          ],
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8), Color(0xFF1E40AF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -190,10 +195,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
               children: [
                 _headerTitle(),
                 const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: _createButton(),
-                ),
+                SizedBox(width: double.infinity, child: _createButton()),
               ],
             );
           }
@@ -218,9 +220,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
           child: const Icon(
             Icons.campaign_rounded,
@@ -264,21 +264,14 @@ class _NoticesScreenState extends State<NoticesScreen> {
       icon: const Icon(Icons.add_rounded, size: 20),
       label: const Text(
         'Create Notice',
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w700),
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1D4ED8),
         elevation: 0,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 15,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -289,9 +282,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
@@ -324,9 +315,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: const Color(0xFFE5E7EB),
-            ),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -347,19 +336,13 @@ class _NoticesScreenState extends State<NoticesScreen> {
               const SizedBox(height: 18),
               const Text(
                 'Unable to Load Notices',
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
                 errorMessage ?? 'Something went wrong.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -462,9 +445,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
             blurRadius: 18,
@@ -482,11 +463,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
               color: iconBackground,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 24,
-            ),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -528,9 +505,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -567,9 +542,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                   child: Text(
                     category,
                     style: TextStyle(
-                      color: selected
-                          ? Colors.white
-                          : const Color(0xFF4B5563),
+                      color: selected ? Colors.white : const Color(0xFF4B5563),
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -594,24 +567,17 @@ class _NoticesScreenState extends State<NoticesScreen> {
       return _buildEmptyState();
     }
 
-    return Column(
-      children: data.map(_buildNoticeCard).toList(),
-    );
+    return Column(children: data.map(_buildNoticeCard).toList());
   }
 
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 60,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         children: [
@@ -643,10 +609,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
           const Text(
             'Create a notice to share important updates with your school community.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
@@ -660,8 +623,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }
 
   Widget _buildNoticeCard(NoticeModel notice) {
-    final isPublished =
-        notice.status!.toUpperCase() == 'PUBLISHED';
+    final isPublished = notice.status!.toUpperCase() == 'PUBLISHED';
 
     return Container(
       width: double.infinity,
@@ -669,9 +631,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
             blurRadius: 18,
@@ -700,9 +660,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _noticeMainContent(notice),
-                ),
+                Expanded(child: _noticeMainContent(notice)),
                 const SizedBox(width: 20),
                 _noticeActions(notice),
               ],
@@ -714,8 +672,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }
 
   Widget _noticeMainContent(NoticeModel notice) {
-    final isPublished =
-        notice.status!.toUpperCase() == 'PUBLISHED';
+    final isPublished = notice.status!.toUpperCase() == 'PUBLISHED';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,9 +700,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                 runSpacing: 6,
                 children: [
                   _categoryBadge(notice.category!),
-                  _statusBadge(
-                    isPublished ? 'Published' : 'Draft',
-                  ),
+                  _statusBadge(isPublished ? 'Published' : 'Draft'),
                 ],
               ),
               const SizedBox(height: 9),
@@ -837,15 +792,9 @@ class _NoticesScreenState extends State<NoticesScreen> {
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(11),
-            border: Border.all(
-              color: color.withValues(alpha: 0.12),
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.12)),
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          child: Icon(icon, color: color, size: 20),
         ),
       ),
     );
@@ -855,10 +804,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
     final color = _categoryColor(category);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(8),
@@ -882,10 +828,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
         : const Color(0xFFEA580C);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(8),
@@ -894,9 +837,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isPublished
-                ? Icons.check_circle_rounded
-                : Icons.schedule_rounded,
+            isPublished ? Icons.check_circle_rounded : Icons.schedule_rounded,
             size: 12,
             color: color,
           ),
@@ -918,11 +859,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: const Color(0xFF9CA3AF),
-        ),
+        Icon(icon, size: 14, color: const Color(0xFF9CA3AF)),
         const SizedBox(width: 5),
         Text(
           text,
@@ -941,9 +878,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
   // ---------------------------------------------------------------------------
 
   Future<void> _showAddNoticeDialog() async {
-    await _showNoticeFormDialog(
-      mode: _NoticeFormMode.create,
-    );
+    await _showNoticeFormDialog(mode: _NoticeFormMode.create);
   }
 
   // ---------------------------------------------------------------------------
@@ -951,10 +886,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
   // ---------------------------------------------------------------------------
 
   Future<void> _editNotice(NoticeModel notice) async {
-    await _showNoticeFormDialog(
-      mode: _NoticeFormMode.edit,
-      notice: notice,
-    );
+    await _showNoticeFormDialog(mode: _NoticeFormMode.edit, notice: notice);
   }
 
   // ---------------------------------------------------------------------------
@@ -975,19 +907,15 @@ class _NoticesScreenState extends State<NoticesScreen> {
       text: isEdit ? notice!.message : '',
     );
 
-    String? selectedFormCategory =
-        isEdit && notice!.category!.isNotEmpty
-            ? notice.category
-            : null;
+    String? selectedFormCategory = isEdit && notice!.category!.isNotEmpty
+        ? notice.category
+        : null;
 
-    String? selectedAudience =
-        isEdit && notice!.audience!.isNotEmpty
-            ? _displayAudience(notice.audience!)
-            : null;
+    String? selectedAudience = isEdit && notice!.audience!.isNotEmpty
+        ? _displayAudience(notice.audience!)
+        : null;
 
-    String status = isEdit
-        ? notice!.status!.toUpperCase()
-        : 'DRAFT';
+    String status = isEdit ? notice!.status!.toUpperCase() : 'DRAFT';
 
     final formKey = GlobalKey<FormState>();
 
@@ -1069,17 +997,11 @@ class _NoticesScreenState extends State<NoticesScreen> {
                       ),
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(
-                            26,
-                            24,
-                            26,
-                            12,
-                          ),
+                          padding: const EdgeInsets.fromLTRB(26, 24, 26, 12),
                           child: Form(
                             key: formKey,
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _dialogSectionTitle(
                                   icon: Icons.edit_document,
@@ -1092,10 +1014,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                 ),
                                 const SizedBox(height: 22),
 
-                                _fieldLabel(
-                                  'Notice Title',
-                                  required: true,
-                                ),
+                                _fieldLabel('Notice Title', required: true),
                                 const SizedBox(height: 8),
                                 _premiumTextField(
                                   controller: titleController,
@@ -1103,8 +1022,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                   icon: Icons.title_rounded,
                                   maxLength: 120,
                                   validator: (value) {
-                                    if (value == null ||
-                                        value.trim().isEmpty) {
+                                    if (value == null || value.trim().isEmpty) {
                                       return 'Notice title is required';
                                     }
 
@@ -1118,10 +1036,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
                                 const SizedBox(height: 20),
 
-                                _fieldLabel(
-                                  'Description',
-                                  required: true,
-                                ),
+                                _fieldLabel('Description', required: true),
                                 const SizedBox(height: 8),
                                 _premiumTextField(
                                   controller: descriptionController,
@@ -1130,8 +1045,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                   maxLines: 6,
                                   maxLength: 1000,
                                   validator: (value) {
-                                    if (value == null ||
-                                        value.trim().isEmpty) {
+                                    if (value == null || value.trim().isEmpty) {
                                       return 'Description is required';
                                     }
 
@@ -1154,20 +1068,18 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                             selectedFormCategory,
                                             (value) {
                                               setDialogState(() {
-                                                selectedFormCategory =
-                                                    value;
+                                                selectedFormCategory = value;
                                               });
                                             },
                                           ),
                                           const SizedBox(height: 18),
-                                          _audienceDropdown(
-                                            selectedAudience,
-                                            (value) {
-                                              setDialogState(() {
-                                                selectedAudience = value;
-                                              });
-                                            },
-                                          ),
+                                          _audienceDropdown(selectedAudience, (
+                                            value,
+                                          ) {
+                                            setDialogState(() {
+                                              selectedAudience = value;
+                                            });
+                                          }),
                                         ],
                                       );
                                     }
@@ -1181,8 +1093,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                             selectedFormCategory,
                                             (value) {
                                               setDialogState(() {
-                                                selectedFormCategory =
-                                                    value;
+                                                selectedFormCategory = value;
                                               });
                                             },
                                           ),
@@ -1205,9 +1116,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
                                 if (isEdit) ...[
                                   const SizedBox(height: 22),
-                                  _buildEditStatusInfo(
-                                    notice!.status!,
-                                  ),
+                                  _buildEditStatusInfo(notice!.status!),
                                 ],
 
                                 const SizedBox(height: 18),
@@ -1219,37 +1128,26 @@ class _NoticesScreenState extends State<NoticesScreen> {
                       ),
 
                       Container(
-                        padding: const EdgeInsets.fromLTRB(
-                          22,
-                          14,
-                          22,
-                          20,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(22, 14, 22, 20),
                         decoration: const BoxDecoration(
                           color: Color(0xFFFAFBFC),
                           border: Border(
-                            top: BorderSide(
-                              color: Color(0xFFE5E7EB),
-                            ),
+                            top: BorderSide(color: Color(0xFFE5E7EB)),
                           ),
                         ),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final mobile =
-                                constraints.maxWidth < 500;
+                            final mobile = constraints.maxWidth < 500;
 
                             if (mobile) {
                               return Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   OutlinedButton(
                                     onPressed: dialogSaving
                                         ? null
                                         : () {
-                                            Navigator.of(
-                                              dialogContext,
-                                            ).pop();
+                                            Navigator.of(dialogContext).pop();
                                           },
                                     child: const Text('Cancel'),
                                   ),
@@ -1259,15 +1157,10 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                       onPressed: dialogSaving
                                           ? null
                                           : () => submit('DRAFT'),
-                                      icon: const Icon(
-                                        Icons.save_outlined,
-                                      ),
-                                      label: const Text(
-                                        'Save as Draft',
-                                      ),
+                                      icon: const Icon(Icons.save_outlined),
+                                      label: const Text('Save as Draft'),
                                     ),
-                                  if (!isEdit)
-                                    const SizedBox(height: 10),
+                                  if (!isEdit) const SizedBox(height: 10),
                                   ElevatedButton.icon(
                                     onPressed: dialogSaving
                                         ? null
@@ -1282,8 +1175,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                         ? const SizedBox(
                                             width: 17,
                                             height: 17,
-                                            child:
-                                                CircularProgressIndicator(
+                                            child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                             ),
                                           )
@@ -1296,8 +1188,8 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                       dialogSaving
                                           ? 'Saving...'
                                           : isEdit
-                                              ? 'Update Notice'
-                                              : 'Publish Notice',
+                                          ? 'Update Notice'
+                                          : 'Publish Notice',
                                     ),
                                   ),
                                 ],
@@ -1305,16 +1197,13 @@ class _NoticesScreenState extends State<NoticesScreen> {
                             }
 
                             return Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
                                   onPressed: dialogSaving
                                       ? null
                                       : () {
-                                          Navigator.of(
-                                            dialogContext,
-                                          ).pop();
+                                          Navigator.of(dialogContext).pop();
                                         },
                                   child: const Text('Cancel'),
                                 ),
@@ -1324,12 +1213,8 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                     onPressed: dialogSaving
                                         ? null
                                         : () => submit('DRAFT'),
-                                    icon: const Icon(
-                                      Icons.save_outlined,
-                                    ),
-                                    label: const Text(
-                                      'Save as Draft',
-                                    ),
+                                    icon: const Icon(Icons.save_outlined),
+                                    label: const Text('Save as Draft'),
                                   ),
                                   const SizedBox(width: 10),
                                 ],
@@ -1347,8 +1232,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                       ? const SizedBox(
                                           width: 17,
                                           height: 17,
-                                          child:
-                                              CircularProgressIndicator(
+                                          child: CircularProgressIndicator(
                                             strokeWidth: 2,
                                           ),
                                         )
@@ -1361,8 +1245,8 @@ class _NoticesScreenState extends State<NoticesScreen> {
                                     dialogSaving
                                         ? 'Saving...'
                                         : isEdit
-                                            ? 'Update Notice'
-                                            : 'Publish Notice',
+                                        ? 'Update Notice'
+                                        : 'Publish Notice',
                                   ),
                                 ),
                               ],
@@ -1394,10 +1278,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
       padding: const EdgeInsets.fromLTRB(24, 22, 18, 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF2563EB),
-            Color(0xFF1D4ED8),
-          ],
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1412,9 +1293,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              isEdit
-                  ? Icons.edit_note_rounded
-                  : Icons.campaign_rounded,
+              isEdit ? Icons.edit_note_rounded : Icons.campaign_rounded,
               color: Colors.white,
               size: 26,
             ),
@@ -1437,20 +1316,14 @@ class _NoticesScreenState extends State<NoticesScreen> {
                   isEdit
                       ? 'Update notice details'
                       : 'Share an important update',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
-              Icons.close_rounded,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.close_rounded, color: Colors.white),
           ),
         ],
       ),
@@ -1472,11 +1345,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(11),
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF2563EB),
-            size: 20,
-          ),
+          child: Icon(icon, color: const Color(0xFF2563EB), size: 20),
         ),
         const SizedBox(width: 11),
         Expanded(
@@ -1494,10 +1363,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
               const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
               ),
             ],
           ),
@@ -1506,10 +1372,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
     );
   }
 
-  Widget _fieldLabel(
-    String text, {
-    bool required = false,
-  }) {
+  Widget _fieldLabel(String text, {bool required = false}) {
     return RichText(
       text: TextSpan(
         children: [
@@ -1548,8 +1411,9 @@ class _NoticesScreenState extends State<NoticesScreen> {
       maxLines: maxLines,
       maxLength: maxLength,
       validator: validator,
-      textInputAction:
-          maxLines > 1 ? TextInputAction.newline : TextInputAction.next,
+      textInputAction: maxLines > 1
+          ? TextInputAction.newline
+          : TextInputAction.next,
       style: const TextStyle(
         color: Color(0xFF111827),
         fontSize: 14,
@@ -1557,21 +1421,14 @@ class _NoticesScreenState extends State<NoticesScreen> {
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF9CA3AF),
-          fontSize: 13,
-        ),
+        hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
         prefixIcon: Padding(
           padding: EdgeInsets.only(
             left: 14,
             right: 10,
             top: maxLines > 1 ? 14 : 0,
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF6B7280),
-            size: 20,
-          ),
+          child: Icon(icon, color: const Color(0xFF6B7280), size: 20),
         ),
         prefixIconConstraints: BoxConstraints(
           minWidth: maxLines > 1 ? 48 : 48,
@@ -1585,63 +1442,40 @@ class _NoticesScreenState extends State<NoticesScreen> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xFFE5E7EB),
-          ),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xFFE5E7EB),
-          ),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xFF2563EB),
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xFFDC2626),
-          ),
+          borderSide: const BorderSide(color: Color(0xFFDC2626)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xFFDC2626),
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
         ),
-        counterStyle: const TextStyle(
-          color: Color(0xFF9CA3AF),
-          fontSize: 10,
-        ),
+        counterStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
       ),
     );
   }
 
-  Widget _categoryDropdown(
-    String? value,
-    ValueChanged<String?> onChanged,
-  ) {
+  Widget _categoryDropdown(String? value, ValueChanged<String?> onChanged) {
     final dropdownCategories = _categories
         .where((category) => category != 'All')
         .toList();
 
-    final safeValue = dropdownCategories.contains(value)
-        ? value
-        : null;
+    final safeValue = dropdownCategories.contains(value) ? value : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel(
-          'Category',
-          required: true,
-        ),
+        _fieldLabel('Category', required: true),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: safeValue,
@@ -1660,10 +1494,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
           items: dropdownCategories.map((category) {
             return DropdownMenuItem<String>(
               value: category,
-              child: Text(
-                category,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(category, overflow: TextOverflow.ellipsis),
             );
           }).toList(),
           onChanged: onChanged,
@@ -1672,20 +1503,13 @@ class _NoticesScreenState extends State<NoticesScreen> {
     );
   }
 
-  Widget _audienceDropdown(
-    String? value,
-    ValueChanged<String?> onChanged,
-  ) {
-    final safeValue =
-        _audiences.contains(value) ? value : null;
+  Widget _audienceDropdown(String? value, ValueChanged<String?> onChanged) {
+    final safeValue = _audiences.contains(value) ? value : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel(
-          'Audience',
-          required: true,
-        ),
+        _fieldLabel('Audience', required: true),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: safeValue,
@@ -1704,10 +1528,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
           items: _audiences.map((audience) {
             return DropdownMenuItem<String>(
               value: audience,
-              child: Text(
-                audience,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(audience, overflow: TextOverflow.ellipsis),
             );
           }).toList(),
           onChanged: onChanged,
@@ -1722,52 +1543,30 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-        color: Color(0xFF9CA3AF),
-        fontSize: 13,
-      ),
-      prefixIcon: Icon(
-        icon,
-        color: const Color(0xFF6B7280),
-        size: 20,
-      ),
+      hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+      prefixIcon: Icon(icon, color: const Color(0xFF6B7280), size: 20),
       filled: true,
       fillColor: const Color(0xFFF9FAFB),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 15,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFE5E7EB),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFE5E7EB),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFF2563EB),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFDC2626),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFDC2626)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFDC2626),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
       ),
     );
   }
@@ -1778,18 +1577,12 @@ class _NoticesScreenState extends State<NoticesScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFFDE68A),
-        ),
+        border: Border.all(color: const Color(0xFFFDE68A)),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 18,
-            color: Color(0xFFD97706),
-          ),
+          Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFD97706)),
           SizedBox(width: 9),
           Expanded(
             child: Text(
@@ -1807,20 +1600,15 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }
 
   Widget _buildEditStatusInfo(String currentStatus) {
-    final published =
-        currentStatus.toUpperCase() == 'PUBLISHED';
+    final published = currentStatus.toUpperCase() == 'PUBLISHED';
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: published
-            ? const Color(0xFFECFDF5)
-            : const Color(0xFFFFF7ED),
+        color: published ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: published
-              ? const Color(0xFFA7F3D0)
-              : const Color(0xFFFED7AA),
+          color: published ? const Color(0xFFA7F3D0) : const Color(0xFFFED7AA),
         ),
       ),
       child: Row(
@@ -1900,9 +1688,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Failed to create notice: ${_cleanError(e)}',
-          ),
+          content: Text('Failed to create notice: ${_cleanError(e)}'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFFDC2626),
         ),
@@ -1931,10 +1717,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
       // Important:
       // Published notice must remain published when edited.
-      final finalStatus =
-          originalStatus == 'PUBLISHED'
-              ? 'PUBLISHED'
-              : status;
+      final finalStatus = originalStatus == 'PUBLISHED' ? 'PUBLISHED' : status;
 
       await _noticeService!.updateNotice(
         id: notice.id!,
@@ -1965,9 +1748,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Failed to update notice: ${_cleanError(e)}',
-          ),
+          content: Text('Failed to update notice: ${_cleanError(e)}'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFFDC2626),
         ),
@@ -1981,14 +1762,11 @@ class _NoticesScreenState extends State<NoticesScreen> {
   // VIEW NOTICE
   // ---------------------------------------------------------------------------
 
-  Future<void> _showNoticeDetails(
-    NoticeModel notice,
-  ) async {
+  Future<void> _showNoticeDetails(NoticeModel notice) async {
     await showDialog(
       context: context,
       builder: (dialogContext) {
-        final isPublished =
-            notice.status!.toUpperCase() == 'PUBLISHED';
+        final isPublished = notice.status!.toUpperCase() == 'PUBLISHED';
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(
@@ -2000,27 +1778,20 @@ class _NoticesScreenState extends State<NoticesScreen> {
           ),
           clipBehavior: Clip.antiAlias,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 680,
-              maxHeight: 760,
-            ),
+            constraints: const BoxConstraints(maxWidth: 680, maxHeight: 760),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(
-                    24,
-                    24,
-                    18,
-                    24,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 18, 24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
                         _categoryColor(notice.category!),
-                        _categoryColor(notice.category!)
-                            .withValues(alpha: 0.78),
+                        _categoryColor(
+                          notice.category!,
+                        ).withValues(alpha: 0.78),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -2033,11 +1804,8 @@ class _NoticesScreenState extends State<NoticesScreen> {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(
-                            alpha: 0.16,
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(16),
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Icon(
                           _categoryIcon(notice.category!),
@@ -2048,8 +1816,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                       const SizedBox(width: 13),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               'Notice Details',
@@ -2063,8 +1830,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                             Text(
                               notice.title,
                               maxLines: 2,
-                              overflow:
-                                  TextOverflow.ellipsis,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -2092,19 +1858,14 @@ class _NoticesScreenState extends State<NoticesScreen> {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
                             _categoryBadge(notice.category!),
-                            _statusBadge(
-                              isPublished
-                                  ? 'Published'
-                                  : 'Draft',
-                            ),
+                            _statusBadge(isPublished ? 'Published' : 'Draft'),
                           ],
                         ),
 
@@ -2130,11 +1891,8 @@ class _NoticesScreenState extends State<NoticesScreen> {
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
-                            borderRadius:
-                                BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFFE5E7EB),
-                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
                           ),
                           child: Text(
                             notice.message!,
@@ -2147,8 +1905,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                           ),
                         ),
 
-                        if (isPublished &&
-                            notice.publishedAt != null) ...[
+                        if (isPublished && notice.publishedAt != null) ...[
                           const SizedBox(height: 18),
                           _publishedInfo(notice),
                         ],
@@ -2158,31 +1915,19 @@ class _NoticesScreenState extends State<NoticesScreen> {
                 ),
 
                 Container(
-                  padding: const EdgeInsets.fromLTRB(
-                    22,
-                    14,
-                    22,
-                    20,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(22, 14, 22, 20),
                   decoration: const BoxDecoration(
                     color: Color(0xFFFAFBFC),
-                    border: Border(
-                      top: BorderSide(
-                        color: Color(0xFFE5E7EB),
-                      ),
-                    ),
+                    border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
                   ),
                   child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       OutlinedButton.icon(
                         onPressed: () {
                           Navigator.of(dialogContext).pop();
                         },
-                        icon: const Icon(
-                          Icons.close_rounded,
-                        ),
+                        icon: const Icon(Icons.close_rounded),
                         label: const Text('Close'),
                       ),
                       const SizedBox(width: 10),
@@ -2191,9 +1936,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                           Navigator.of(dialogContext).pop();
                           await _editNotice(notice);
                         },
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                        ),
+                        icon: const Icon(Icons.edit_outlined),
                         label: const Text('Edit Notice'),
                       ),
                     ],
@@ -2240,8 +1983,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
             children: items
                 .map(
                   (item) => Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: item,
                   ),
                 )
@@ -2272,9 +2014,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
         children: [
@@ -2285,19 +2025,13 @@ class _NoticesScreenState extends State<NoticesScreen> {
               color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF2563EB),
-              size: 18,
-            ),
+            child: Icon(icon, color: const Color(0xFF2563EB), size: 18),
           ),
           const SizedBox(width: 9),
           Expanded(
             child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
@@ -2332,18 +2066,12 @@ class _NoticesScreenState extends State<NoticesScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFECFDF5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFA7F3D0),
-        ),
+        border: Border.all(color: const Color(0xFFA7F3D0)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.publish_rounded,
-            color: Color(0xFF059669),
-            size: 20,
-          ),
+          const Icon(Icons.publish_rounded, color: Color(0xFF059669), size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -2364,9 +2092,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
   // DELETE
   // ---------------------------------------------------------------------------
 
-  Future<void> _deleteNotice(
-    NoticeModel notice,
-  ) async {
+  Future<void> _deleteNotice(NoticeModel notice) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -2374,24 +2100,9 @@ class _NoticesScreenState extends State<NoticesScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          titlePadding: const EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            8,
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            10,
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(
-            18,
-            4,
-            18,
-            18,
-          ),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+          contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 10),
+          actionsPadding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
           title: Row(
             children: [
               Container(
@@ -2410,10 +2121,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
               const Expanded(
                 child: Text(
                   'Delete Notice?',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -2452,9 +2160,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
     await _performDelete(notice);
   }
 
-  Future<void> _performDelete(
-    NoticeModel notice,
-  ) async {
+  Future<void> _performDelete(NoticeModel notice) async {
     if (_noticeService == null) return;
 
     try {
@@ -2476,9 +2182,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Failed to delete notice: ${_cleanError(e)}',
-          ),
+          content: Text('Failed to delete notice: ${_cleanError(e)}'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFFDC2626),
         ),
@@ -2570,8 +2274,8 @@ class _NoticesScreenState extends State<NoticesScreen> {
     final hour = local.hour == 0
         ? 12
         : local.hour > 12
-            ? local.hour - 12
-            : local.hour;
+        ? local.hour - 12
+        : local.hour;
 
     final minute = local.minute.toString().padLeft(2, '0');
 
@@ -2637,7 +2341,4 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }
 }
 
-enum _NoticeFormMode {
-  create,
-  edit,
-}
+enum _NoticeFormMode { create, edit }

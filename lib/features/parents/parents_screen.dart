@@ -47,23 +47,36 @@ class _ParentsScreenState extends State<ParentsScreen> {
   }
 
   Future<void> _initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      final schoolId = prefs.getInt('school_id');
 
-    if (token == null || token.isEmpty) {
+      if (token == null ||
+          token.trim().isEmpty ||
+          schoolId == null ||
+          schoolId <= 0) {
+        if (!mounted) return;
+
+        setState(() {
+          _errorMessage =
+              'Session expired or school ID missing. Please login again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      _parentService = ParentService(token);
+
+      await _loadParents();
+    } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = 'Session expired. Please login again.';
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
-
-      return;
     }
-
-    _parentService = ParentService(token);
-
-    await _loadParents();
   }
 
   Future<void> _loadParents() async {

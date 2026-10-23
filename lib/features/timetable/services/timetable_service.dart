@@ -12,7 +12,7 @@ class TimetableService {
   TimetableService(String token)
     : _dio = Dio(
         BaseOptions(
-          baseUrl: 'http://localhost:8080',
+          baseUrl: 'http://localhost:8081',
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 60),
           headers: {

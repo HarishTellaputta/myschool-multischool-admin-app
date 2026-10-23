@@ -4,7 +4,7 @@ import 'package:smartkids_admin/features/homework/models/homework_model.dart';
 class HomeworkService {
   final Dio _dio;
 
-  HomeworkService({String baseUrl = 'http://localhost:8080'})
+  HomeworkService({String baseUrl = 'http://localhost:8081'})
     : _dio = Dio(
         BaseOptions(
           baseUrl: baseUrl,

@@ -22,7 +22,7 @@ class ClassesScreen extends StatefulWidget {
 }
 
 class _ClassesScreenState extends State<ClassesScreen> {
-  final int _schoolId = 1;
+
 
   final Map<int, List<ClassSubjectModel>> _classSubjectsMap = {};
   final apiClient = ApiClient();
@@ -85,31 +85,38 @@ class _ClassesScreenState extends State<ClassesScreen> {
     }
   }
 
-  Future<void> _initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
+ int? _schoolId;
 
-    if (token == null || token.isEmpty) {
-      if (!mounted) return;
+Future<void> _initialize() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final schoolId = prefs.getInt('school_id');
 
-      setState(() {
-        _isLoading = false;
-      });
+  if (token == null || token.isEmpty || schoolId == null) {
+    if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please login again.')),
-      );
+    setState(() {
+      _isLoading = false;
+    });
 
-      return;
-    }
-
-    _classService = ClassService(apiClient);
-    _classSubjectService = ClassSubjectService(apiClient);
-    _subjectService = SubjectService(token);
-
-    await _loadClasses();
-    _loadCurrentAcademicYear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Session expired. Please login again.'),
+      ),
+    );
+    return;
   }
+
+  _schoolId = schoolId;
+
+  _classService = ClassService(apiClient);
+  _classSubjectService = ClassSubjectService(apiClient);
+  _subjectService = SubjectService(token);
+
+  await _loadClasses();
+  await _loadCurrentAcademicYear();
+}
+
 
   Future<void> _loadClasses() async {
     if (_classService == null || _classSubjectService == null) return;
@@ -119,7 +126,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
     });
 
     try {
-      final classes = await _classService!.getClassesBySchool(_schoolId);
+      final classes = await _classService!.getClassesBySchool(_schoolId!);
 
       _classSubjectsMap.clear();
 
@@ -191,7 +198,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
 
     try {
       final subjects = await _subjectService!.getActiveSubjectsBySchool(
-        _schoolId,
+        _schoolId!,
       );
 
       if (!mounted) return;
@@ -721,23 +728,35 @@ class _ClassesScreenState extends State<ClassesScreen> {
     }
   }
 
-  Future<_ClassDialogResult?> _showClassDialog({SchoolClass? schoolClass}) {
-    return showDialog<_ClassDialogResult>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return _ClassFormDialog(
-          schoolId: _schoolId,
-          schoolClass: schoolClass,
-          subjectService: _subjectService!,
-          classSubjects: schoolClass?.id == null
-              ? []
-              : (_classSubjectsMap[schoolClass!.id!] ?? []),
-        );
-      },
+ Future<_ClassDialogResult?> _showClassDialog({
+  SchoolClass? schoolClass,
+}) {
+  final schoolId = _schoolId;
+
+  if (schoolId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('School ID not found. Please login again.'),
+      ),
     );
+    return Future.value(null);
   }
 
+  return showDialog<_ClassDialogResult>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) {
+      return _ClassFormDialog(
+        schoolId: schoolId,
+        schoolClass: schoolClass,
+        subjectService: _subjectService!,
+        classSubjects: schoolClass?.id == null
+            ? []
+            : (_classSubjectsMap[schoolClass!.id!] ?? []),
+      );
+    },
+  );
+}
   void _viewClass(SchoolClass schoolClass) {
     if (schoolClass.id == null) {
       ScaffoldMessenger.of(

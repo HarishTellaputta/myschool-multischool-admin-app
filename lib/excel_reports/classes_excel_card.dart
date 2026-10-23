@@ -8,6 +8,7 @@ import '../../core/network/api_client.dart';
 import '../excel_reports/excel_file_picker.dart';
 import '../excel_reports/excel_import_dialogs.dart';
 import '../features/teachers/services/class_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ClassesExcelCard extends StatefulWidget {
   const ClassesExcelCard({super.key});
@@ -50,15 +51,10 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
       final defaultSheet = excel.getDefaultSheet();
 
       if (defaultSheet == null) {
-        throw Exception(
-          'Unable to create Excel sheet.',
-        );
+        throw Exception('Unable to create Excel sheet.');
       }
 
-      excel.rename(
-        defaultSheet,
-        'Classes',
-      );
+      excel.rename(defaultSheet, 'Classes');
 
       final sheet = excel['Classes'];
 
@@ -105,9 +101,7 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
       final bytes = excel.encode();
 
       if (bytes == null) {
-        throw Exception(
-          'Failed to generate Classes Excel.',
-        );
+        throw Exception('Failed to generate Classes Excel.');
       }
 
       await FileSaver.instance.saveFile(
@@ -152,9 +146,7 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
     });
 
     try {
-      debugPrint('========================================');
       debugPrint('CLASSES EXCEL IMPORT STARTED');
-      debugPrint('========================================');
 
       final pickedFile = await ExcelFilePicker.pick();
 
@@ -163,13 +155,32 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
         return;
       }
 
-      debugPrint(
-        'CLASS EXCEL FILE: ${pickedFile.name}',
-      );
+      // Validate Excel file
+      if (!pickedFile.name.toLowerCase().endsWith('.xlsx')) {
+        throw Exception('Please select a valid .xlsx Excel file.');
+      }
 
-      debugPrint(
-        'CLASS EXCEL SIZE: ${pickedFile.bytes.length}',
-      );
+      if (pickedFile.bytes.isEmpty) {
+        throw Exception('Unable to read the selected Excel file.');
+      }
+
+      // Get logged-in school's details
+      final prefs = await SharedPreferences.getInstance();
+
+      final token = prefs.getString('jwt_token');
+      final schoolId = prefs.getInt('school_id');
+
+      if (token == null || token.trim().isEmpty) {
+        throw Exception('Session expired. Please login again.');
+      }
+
+      if (schoolId == null || schoolId <= 0) {
+        throw Exception('School ID not found. Please login again.');
+      }
+
+      debugPrint('IMPORT SCHOOL ID: $schoolId');
+      debugPrint('CLASS EXCEL FILE: ${pickedFile.name}');
+      debugPrint('CLASS EXCEL SIZE: ${pickedFile.bytes.length} bytes');
 
       final data = await _classService.importClassesExcel(
         schoolId: schoolId,
@@ -182,12 +193,10 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
 
       if (!context.mounted) return;
 
-      await _showImportResult(
-        context,
-        data,
-      );
-    } catch (e) {
+      await _showImportResult(context, data);
+    } catch (e, stackTrace) {
       debugPrint('CLASSES IMPORT ERROR: $e');
+      debugPrint('$stackTrace');
 
       if (!context.mounted) return;
 
@@ -213,28 +222,17 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
     BuildContext context,
     Map<String, dynamic> data,
   ) async {
-    final total = _toInt(
-      data['totalRows'],
-    );
+    final total = _toInt(data['totalRows']);
 
-    final created = _toInt(
-      data['createdCount'],
-    );
+    final created = _toInt(data['createdCount']);
 
-    final updated = _toInt(
-      data['updatedCount'],
-    );
+    final updated = _toInt(data['updatedCount']);
 
-    final failed = _toInt(
-      data['failedCount'],
-    );
+    final failed = _toInt(data['failedCount']);
 
-    final message =
-        data['message']?.toString() ?? '';
+    final message = data['message']?.toString() ?? '';
 
-    final errors = _parseErrors(
-      data['errors'],
-    );
+    final errors = _parseErrors(data['errors']);
 
     if (failed == 0) {
       await ExcelImportDialogs.showSuccess(
@@ -274,10 +272,7 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
       return value.toInt();
     }
 
-    return int.tryParse(
-          value.toString(),
-        ) ??
-        0;
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   List<String> _parseErrors(dynamic value) {
@@ -286,12 +281,8 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
     }
 
     return value
-        .map(
-          (e) => e.toString(),
-        )
-        .where(
-          (e) => e.trim().isNotEmpty,
-        )
+        .map((e) => e.toString())
+        .where((e) => e.trim().isNotEmpty)
         .toList();
   }
 
@@ -299,14 +290,10 @@ class _ClassesExcelCardState extends State<ClassesExcelCard> {
     final message = error.toString();
 
     if (message.startsWith('Exception: ')) {
-      return message.substring(
-        'Exception: '.length,
-      );
+      return message.substring('Exception: '.length);
     }
 
-    return message.isEmpty
-        ? 'Something went wrong.'
-        : message;
+    return message.isEmpty ? 'Something went wrong.' : message;
   }
 
   // ============================================================
@@ -348,8 +335,7 @@ class _ClassesCard extends StatefulWidget {
 class _ClassesCardState extends State<_ClassesCard> {
   bool _hovering = false;
 
-  bool get _busy =>
-      widget.importing || widget.downloading;
+  bool get _busy => widget.importing || widget.downloading;
 
   String get _statusText {
     if (widget.downloading) {
@@ -364,8 +350,7 @@ class _ClassesCardState extends State<_ClassesCard> {
   }
 
   Color get _statusColor {
-    if (widget.downloading ||
-        widget.importing) {
+    if (widget.downloading || widget.importing) {
       return const Color(0xFFD97706);
     }
 
@@ -373,8 +358,7 @@ class _ClassesCardState extends State<_ClassesCard> {
   }
 
   Color get _statusBackground {
-    if (widget.downloading ||
-        widget.importing) {
+    if (widget.downloading || widget.importing) {
       return const Color(0xFFFFF7ED);
     }
 
@@ -395,9 +379,7 @@ class _ClassesCardState extends State<_ClassesCard> {
         });
       },
       child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 220,
-        ),
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
@@ -410,28 +392,21 @@ class _ClassesCardState extends State<_ClassesCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(
-                _hovering ? 0.075 : 0.035,
-              ),
+              color: Colors.black.withOpacity(_hovering ? 0.075 : 0.035),
               blurRadius: _hovering ? 22 : 12,
-              offset: Offset(
-                0,
-                _hovering ? 8 : 4,
-              ),
+              offset: Offset(0, _hovering ? 8 : 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==================================================
             // HEADER
             // ==================================================
 
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 46,
@@ -440,23 +415,14 @@ class _ClassesCardState extends State<_ClassesCard> {
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF2563EB),
-                        Color(0xFF4F46E5),
-                      ],
+                      colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(13),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(
-                          0xFF2563EB,
-                        ).withOpacity(0.20),
+                        color: const Color(0xFF2563EB).withOpacity(0.20),
                         blurRadius: 12,
-                        offset: const Offset(
-                          0,
-                          5,
-                        ),
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -471,8 +437,7 @@ class _ClassesCardState extends State<_ClassesCard> {
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
@@ -481,10 +446,8 @@ class _ClassesCardState extends State<_ClassesCard> {
                               'Classes',
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight:
-                                    FontWeight.w800,
-                                color:
-                                    Color(0xFF111827),
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF111827),
                                 letterSpacing: -0.2,
                               ),
                             ),
@@ -492,52 +455,33 @@ class _ClassesCardState extends State<_ClassesCard> {
 
                           // STATUS
                           AnimatedContainer(
-                            duration:
-                                const Duration(
-                              milliseconds: 200,
-                            ),
-                            padding:
-                                const EdgeInsets
-                                    .symmetric(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 9,
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  _statusBackground,
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(20),
+                              color: _statusBackground,
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
-                              mainAxisSize:
-                                  MainAxisSize.min,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
                                   width: 6,
                                   height: 6,
-                                  decoration:
-                                      BoxDecoration(
-                                    color:
-                                        _statusColor,
-                                    shape:
-                                        BoxShape
-                                            .circle,
+                                  decoration: BoxDecoration(
+                                    color: _statusColor,
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 5,
-                                ),
+                                const SizedBox(width: 5),
                                 Text(
                                   _statusText,
-                                  style:
-                                      TextStyle(
+                                  style: TextStyle(
                                     fontSize: 9.5,
-                                    fontWeight:
-                                        FontWeight
-                                            .w700,
-                                    color:
-                                        _statusColor,
+                                    fontWeight: FontWeight.w700,
+                                    color: _statusColor,
                                   ),
                                 ),
                               ],
@@ -567,21 +511,13 @@ class _ClassesCardState extends State<_ClassesCard> {
             // ==================================================
             // INFO STRIP
             // ==================================================
-
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 9,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius:
-                    BorderRadius.circular(10),
-                border: Border.all(
-                  color:
-                      const Color(0xFFEEF2F7),
-                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFEEF2F7)),
               ),
               child: Row(
                 children: [
@@ -610,7 +546,6 @@ class _ClassesCardState extends State<_ClassesCard> {
             // ==================================================
             // ACTION BUTTONS
             // ==================================================
-
             Row(
               children: [
                 // DOWNLOAD
@@ -622,10 +557,7 @@ class _ClassesCardState extends State<_ClassesCard> {
                     icon: Icons.download_rounded,
                     primary: true,
                     loading: widget.downloading,
-                    onPressed:
-                        widget.downloading
-                            ? null
-                            : widget.onGenerate,
+                    onPressed: widget.downloading ? null : widget.onGenerate,
                   ),
                 ),
 
@@ -634,16 +566,11 @@ class _ClassesCardState extends State<_ClassesCard> {
                 // IMPORT
                 Expanded(
                   child: _PremiumActionButton(
-                    label: widget.importing
-                        ? 'Importing...'
-                        : 'Import Excel',
+                    label: widget.importing ? 'Importing...' : 'Import Excel',
                     icon: Icons.upload_file_rounded,
                     primary: false,
                     loading: widget.importing,
-                    onPressed:
-                        widget.importing
-                            ? null
-                            : widget.onImport,
+                    onPressed: widget.importing ? null : widget.onImport,
                   ),
                 ),
               ],
@@ -654,7 +581,6 @@ class _ClassesCardState extends State<_ClassesCard> {
             // ==================================================
             // FOOTER
             // ==================================================
-
             Row(
               children: [
                 const Icon(
@@ -722,61 +648,43 @@ class _PremiumActionButton extends StatelessWidget {
       return ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              const Color(0xFF2563EB),
+          backgroundColor: const Color(0xFF2563EB),
           foregroundColor: Colors.white,
-          disabledBackgroundColor:
-              const Color(0xFF93C5FD),
-          disabledForegroundColor:
-              Colors.white,
+          disabledBackgroundColor: const Color(0xFF93C5FD),
+          disabledForegroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            vertical: 12,
-            horizontal: 8,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         child: AnimatedSwitcher(
-          duration: const Duration(
-            milliseconds: 180,
-          ),
+          duration: const Duration(milliseconds: 180),
           child: Row(
-            key: ValueKey(
-              loading ? 'loading' : 'normal',
-            ),
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            key: ValueKey(loading ? 'loading' : 'normal'),
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (loading)
                 const SizedBox(
                   width: 15,
                   height: 15,
-                  child:
-                      CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white,
                   ),
                 )
               else
-                Icon(
-                  icon,
-                  size: 16,
-                ),
+                Icon(icon, size: 16),
 
               const SizedBox(width: 7),
 
               Flexible(
                 child: Text(
                   label,
-                  overflow:
-                      TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 10.5,
-                    fontWeight:
-                        FontWeight.w700,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -789,62 +697,40 @@ class _PremiumActionButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor:
-            const Color(0xFF2563EB),
-        disabledForegroundColor:
-            const Color(0xFF2563EB),
+        foregroundColor: const Color(0xFF2563EB),
+        disabledForegroundColor: const Color(0xFF2563EB),
         backgroundColor: Colors.white,
         side: BorderSide(
-          color: loading
-              ? const Color(0xFF93C5FD)
-              : const Color(0xFFD4DDF0),
+          color: loading ? const Color(0xFF93C5FD) : const Color(0xFFD4DDF0),
           width: 1.1,
         ),
-        padding: const EdgeInsets.symmetric(
-          vertical: 11,
-          horizontal: 8,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(10),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       child: AnimatedSwitcher(
-        duration: const Duration(
-          milliseconds: 180,
-        ),
+        duration: const Duration(milliseconds: 180),
         child: Row(
-          key: ValueKey(
-            loading ? 'loading' : 'normal',
-          ),
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          key: ValueKey(loading ? 'loading' : 'normal'),
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (loading)
               const SizedBox(
                 width: 15,
                 height: 15,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                icon,
-                size: 16,
-              ),
+              Icon(icon, size: 16),
 
             const SizedBox(width: 7),
 
             Flexible(
               child: Text(
                 label,
-                overflow:
-                    TextOverflow.ellipsis,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 10.5,
-                  fontWeight:
-                      FontWeight.w700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),

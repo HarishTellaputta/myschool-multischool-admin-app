@@ -29,7 +29,7 @@ class TeachersScreen extends StatefulWidget {
 }
 
 class _TeachersScreenState extends State<TeachersScreen> {
-  static const int _schoolId = 1;
+  int? _schoolId;
   final apiClient = ApiClient();
   TeacherService? _teacherService;
   ClassService? _classService;
@@ -66,28 +66,49 @@ class _TeachersScreenState extends State<TeachersScreen> {
   // ============================================================
 
   Future<void> _initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      final schoolId = prefs.getInt('school_id');
 
-    if (token == null || token.trim().isEmpty) {
+      if (token == null ||
+          token.trim().isEmpty ||
+          schoolId == null ||
+          schoolId <= 0) {
+        if (!mounted) return;
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        _showMessage(
+          'Login token or school ID not found. Please login again.',
+          isError: true,
+        );
+        return;
+      }
+
+      _schoolId = schoolId;
+      _teacherService = TeacherService(token);
+      _classService = ClassService(apiClient);
+      _assignmentService = TeacherAssignmentService(token);
+
+      await Future.wait([_loadTeachers(), _loadClasses()]);
+    } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
+        _isLoadingClasses = false;
       });
 
-      _showMessage('Authentication token not found.', isError: true);
-
-      return;
+      _showMessage(
+        'Failed to initialize Teachers screen: '
+        '${e.toString().replaceFirst('Exception: ', '')}',
+        isError: true,
+      );
     }
-
-    _teacherService = TeacherService(token);
-    _classService = ClassService(apiClient);
-    _assignmentService = TeacherAssignmentService(token);
-
-    await _loadTeachers();
   }
-
   // ============================================================
   // LOAD DATA
   // ============================================================
@@ -118,7 +139,10 @@ class _TeachersScreenState extends State<TeachersScreen> {
   }
 
   Future<void> _loadClasses() async {
-    if (_classService == null) return;
+    final schoolId = _schoolId;
+    final classService = _classService;
+
+    if (classService == null || schoolId == null) return;
 
     if (mounted) {
       setState(() {
@@ -127,7 +151,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
     }
 
     try {
-      final classes = await _classService!.getClassesBySchool(_schoolId);
+      final classes = await classService.getClassesBySchool(schoolId);
 
       if (!mounted) return;
 
@@ -213,17 +237,22 @@ class _TeachersScreenState extends State<TeachersScreen> {
   // ============================================================
 
   Future<void> _showAddTeacherDialog() async {
+    final schoolId = _schoolId;
+    final teacherService = _teacherService;
+
+    if (schoolId == null || teacherService == null) return;
+
     await _loadAvailableTeacherUsers();
 
-    if (!mounted || _teacherService == null) return;
+    if (!mounted) return;
 
     final created = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) {
         return AddTeacherDialog(
-          teacherService: _teacherService!,
-          schoolId: _schoolId,
+          teacherService: teacherService,
+          schoolId: schoolId,
           availableUsers: _availableTeacherUsers,
           isLoadingAvailableUsers: _isLoadingAvailableUsers,
         );
@@ -239,22 +268,24 @@ class _TeachersScreenState extends State<TeachersScreen> {
       _showMessage('Teacher created successfully.');
     }
   }
-
   // ============================================================
   // EDIT TEACHER
   // ============================================================
 
   Future<void> _showEditTeacherDialog(Teacher teacher) async {
-    if (_teacherService == null) return;
+    final schoolId = _schoolId;
+    final teacherService = _teacherService;
+
+    if (schoolId == null || teacherService == null) return;
 
     final updated = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) {
         return EditTeacherDialog(
-          teacherService: _teacherService!,
+          teacherService: teacherService,
           teacher: teacher,
-          schoolId: _schoolId,
+          schoolId: schoolId,
         );
       },
     );
@@ -267,7 +298,6 @@ class _TeachersScreenState extends State<TeachersScreen> {
       _showMessage('Teacher updated successfully.');
     }
   }
-
   // ============================================================
   // TEACHER DETAILS
   // ============================================================

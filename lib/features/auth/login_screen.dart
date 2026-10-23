@@ -5,6 +5,7 @@ import '../../core/network/api_client.dart';
 import '../../services/auth_service.dart';
 import 'register_screen.dart';
 import '../dashboard/admin_dashboard_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -52,18 +53,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final token = await authService.login(
+      await authService.login(
         username: usernameController.text.trim(),
         password: passwordController.text,
       );
-
-      print('JWT TOKEN: $token');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Login successful'),
+          backgroundColor: Colors.green,
         ),
       );
 
@@ -81,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
           content: Text(
             e.toString().replaceFirst('Exception: ', ''),
           ),
+          backgroundColor: Colors.red,
         ),
       );
     } finally {
@@ -92,137 +93,215 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void openForgotPassword() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ForgotPasswordScreen(),
+      ),
+    );
+  }
+
+  void openRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const RegisterScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF3949AB);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 450,
-            ),
-            child: Card(
-              elevation: 5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 450,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Icon(
-                      Icons.school,
-                      size: 60,
-                      color: Colors.indigo,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    const Text(
-                      'School Admin Login',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+              child: Card(
+                elevation: 5,
+                shadowColor: Colors.black12,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(30),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.stretch,
+                    children: [
+                      const Icon(
+                        Icons.school_rounded,
+                        size: 64,
+                        color: primaryColor,
                       ),
-                    ),
 
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 18),
 
-                    const Text(
-                      'Login to your school management account',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey,
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    TextField(
-                      controller: usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextField(
-                      controller: passwordController,
-                      obscureText: obscurePassword,
-                      onSubmitted: (_) {
-                        if (!isLoading) {
-                          login();
-                        }
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
+                      const Text(
+                        'School Admin Login',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 8),
 
-                    SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : login,
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'LOGIN',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                      const Text(
+                        'Login to your school management account',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.blueGrey,
+                          height: 1.5,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 30),
 
-                    TextButton(
-                      onPressed: isLoading
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      const RegisterScreen(),
-                                ),
-                              );
+                      TextField(
+                        controller: usernameController,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          labelText: 'Username',
+                          prefixIcon:
+                              const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      TextField(
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) {
+                          if (!isLoading) {
+                            login();
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon:
+                              const Icon(Icons.lock_outline),
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(12),
+                          ),
+                          suffixIcon: IconButton(
+                            tooltip: obscurePassword
+                                ? 'Show password'
+                                : 'Hide password',
+                            icon: Icon(
+                              obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                obscurePassword =
+                                    !obscurePassword;
+                              });
                             },
-                      child: const Text(
-                        "Don't have an account? Register",
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 4),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: isLoading
+                              ? null
+                              : openForgotPassword,
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 23,
+                                  height: 23,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'LOGIN',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
+                        children: [
+                          const Flexible(
+                            child: Text(
+                              "Don't have an account?",
+                              style: TextStyle(
+                                color: Colors.blueGrey,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: isLoading
+                                ? null
+                                : openRegister,
+                            child: const Text(
+                              'Register',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
