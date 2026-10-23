@@ -102,7 +102,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
               badge: '5 Modules',
               children: [
                 const AcademicYearExcelCard(),
-                SchoolExcelCard(),
+               // SchoolExcelCard(),
                 const ClassesExcelCard(),
                 const SectionsExcelCard(),
                 const SubjectsExcelCard(),

@@ -28,8 +28,7 @@ class StudentsScreen extends StatefulWidget {
 }
 
 class _StudentsScreenState extends State<StudentsScreen> {
-
-  ApiClient apiClient =ApiClient();
+  ApiClient apiClient = ApiClient();
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -39,9 +38,8 @@ class _StudentsScreenState extends State<StudentsScreen> {
   List<SchoolClass> classes = [];
   int? selectedClassId;
 
+  int? _schoolId;
   bool isClassLoading = false;
-
-  static const int _schoolId = 1;
 
   List<Student> students = [];
 
@@ -84,9 +82,11 @@ class _StudentsScreenState extends State<StudentsScreen> {
       final prefs = await SharedPreferences.getInstance();
 
       final token = prefs.getString('jwt_token');
+      final schoolId = prefs.getInt('school_id');
 
       debugPrint('========== INITIALIZE STUDENTS ==========');
-      debugPrint('TOKEN FROM PREFS: $token');
+      debugPrint('TOKEN EXISTS: ${token != null && token.isNotEmpty}');
+      debugPrint('SCHOOL ID: $schoolId');
 
       if (token == null || token.isEmpty) {
         if (!mounted) return;
@@ -99,9 +99,22 @@ class _StudentsScreenState extends State<StudentsScreen> {
             backgroundColor: Colors.red,
           ),
         );
-
         return;
       }
+
+      if (schoolId == null || schoolId <= 0) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('School ID not found. Please login again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      _schoolId = schoolId;
 
       studentService = StudentService(token);
       classService = ClassService(apiClient);
@@ -135,7 +148,11 @@ class _StudentsScreenState extends State<StudentsScreen> {
     });
 
     try {
-      final result = await classService.getClassesBySchool(_schoolId);
+      final schoolId = _schoolId;
+
+      if (schoolId == null) return;
+
+      final result = await classService.getClassesBySchool(schoolId);
 
       if (!mounted) return;
 

@@ -44,6 +44,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
   int? _selectedClassId;
   int? _selectedSectionId;
   String _selectedDay = 'MONDAY';
+  int? _schoolId;
 
   bool _isLoading = true;
   bool _isRefreshing = false;
@@ -71,12 +72,23 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
+
       final token = prefs.getString('jwt_token');
+      final schoolIdValue = prefs.get('school_id');
 
       if (token == null || token.isEmpty) {
-        _showSnackBar('Session expired. Please login again.', isError: true);
-        return;
+        throw Exception('Session expired. Please login again.');
       }
+
+      final schoolId = schoolIdValue is int
+          ? schoolIdValue
+          : int.tryParse(schoolIdValue?.toString() ?? '');
+
+      if (schoolId == null || schoolId <= 0) {
+        throw Exception('School ID not found. Please login again.');
+      }
+
+      _schoolId = schoolId;
 
       _classService = ClassService(apiClient);
       _teacherService = TeacherService(token);
@@ -85,7 +97,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
       _timetableService = TimetableService(token);
 
       final results = await Future.wait([
-        _classService!.getClasses(),
+        _classService!.getClassesBySchool(_schoolId!),
         _teacherService!.getTeachers(),
       ]);
 
@@ -97,7 +109,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
         await _loadClassData(_selectedClassId!);
       }
     } catch (e) {
-      _showSnackBar('Failed to load timetable data', isError: true);
+      if (mounted) {
+        _showSnackBar(
+          e.toString().replaceFirst('Exception: ', ''),
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

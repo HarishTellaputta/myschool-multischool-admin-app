@@ -7,7 +7,7 @@ class StudentService {
   StudentService(String token)
     : dio = Dio(
         BaseOptions(
-          baseUrl: 'http://localhost:8080',
+          baseUrl: 'http://localhost:8081',
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',

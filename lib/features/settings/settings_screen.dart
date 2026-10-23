@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+import '/services/school_service.dart';
+import '/models/school_response.dart';
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '/core/network/api_client.dart';
+import '/services/school_service.dart';
+import '/models/school_response.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -8,6 +17,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late final SchoolService schoolService;
+
   int selectedSection = 0;
 
   bool emailNotifications = true;
@@ -25,33 +36,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String timezone = 'Asia/Kolkata';
   String dateFormat = 'DD MMM YYYY';
 
-  final schoolNameController = TextEditingController(
-    text: 'MySchool',
-  );
-
-  final schoolCodeController = TextEditingController(text: 'SKP-001');
-
-  final schoolPhoneController = TextEditingController(text: '9876543210');
-
-  final schoolEmailController = TextEditingController(
-    text: 'admin@myschool.com',
-  );
-
-  final schoolAddressController = TextEditingController(
-    text: 'Khammam, Telangana',
-  );
-
-  final principalController = TextEditingController(text: 'School Principal');
+  SchoolResponse? school;
+  bool isLoadingSchool = true;
+  String? schoolLoadError;
 
   @override
-  void dispose() {
-    schoolNameController.dispose();
-    schoolCodeController.dispose();
-    schoolPhoneController.dispose();
-    schoolEmailController.dispose();
-    schoolAddressController.dispose();
-    principalController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+
+    schoolService = SchoolService(ApiClient());
+    _loadSchoolDetails();
+  }
+
+  Future<void> _loadSchoolDetails() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final schoolId = prefs.getInt('school_id');
+
+      if (schoolId == null) {
+        if (!mounted) return;
+
+        setState(() {
+          isLoadingSchool = false;
+          schoolLoadError =
+              'No school is associated with this account. '
+              'Please sign in again or contact the administrator.';
+        });
+        return;
+      }
+
+      final result = await schoolService.getSchoolDetails(schoolId);
+
+      if (!mounted) return;
+
+      setState(() {
+        school = result;
+        isLoadingSchool = false;
+        schoolLoadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingSchool = false;
+        schoolLoadError = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   final List<Map<String, dynamic>> sections = [
@@ -261,72 +291,144 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _schoolProfileSection() {
     return _sectionCard(
       title: 'School Profile',
-      subtitle: 'Update your school information displayed across the platform.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSchoolLogoSection(),
-          const SizedBox(height: 25),
-          _responsiveForm(
-            children: [
-              _textField(
-                controller: schoolNameController,
-                label: 'School Name',
-                icon: Icons.school_outlined,
-              ),
-              _textField(
-                controller: schoolCodeController,
-                label: 'School Code',
-                icon: Icons.badge_outlined,
-              ),
-              _textField(
-                controller: schoolPhoneController,
-                label: 'Phone Number',
-                icon: Icons.phone_outlined,
-              ),
-              _textField(
-                controller: schoolEmailController,
-                label: 'Email Address',
-                icon: Icons.email_outlined,
-              ),
-              _textField(
-                controller: principalController,
-                label: 'Principal Name',
-                icon: Icons.person_outline,
-              ),
-              _textField(
-                controller: schoolAddressController,
-                label: 'School Address',
-                icon: Icons.location_on_outlined,
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          _saveButton(text: 'Save School Profile', onPressed: _saveSettings),
-        ],
-      ),
+      subtitle: 'View the school information registered on the platform.',
+      child: _buildSchoolProfileContent(),
     );
   }
 
-  Widget _buildSchoolLogoSection() {
+  Widget _buildSchoolProfileContent() {
+    if (isLoadingSchool) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 36),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (schoolLoadError != null) {
+      return _infoBox(
+        icon: Icons.error_outline,
+        title: 'Unable to load school details',
+        message: schoolLoadError!,
+      );
+    }
+
+    final details = school;
+    if (details == null) {
+      return _infoBox(
+        icon: Icons.info_outline,
+        title: 'School details unavailable',
+        message: 'No school details were returned by the server.',
+      );
+    }
+
+    final addressParts = [
+      details.address,
+      details.city,
+      details.state,
+      details.postalCode,
+      details.country,
+    ].where((part) => part != null && part.trim().isNotEmpty).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSchoolLogoSection(details.logoUrl),
+        const SizedBox(height: 25),
+        _responsiveForm(
+          children: [
+            _readOnlyField(
+              label: 'School Name',
+              value: details.name,
+              icon: Icons.school_outlined,
+            ),
+            _readOnlyField(
+              label: 'School Code',
+              value: details.code,
+              icon: Icons.badge_outlined,
+            ),
+            _readOnlyField(
+              label: 'Phone Number',
+              value: details.phone,
+              icon: Icons.phone_outlined,
+            ),
+            _readOnlyField(
+              label: 'Email Address',
+              value: details.email,
+              icon: Icons.email_outlined,
+            ),
+            _readOnlyField(
+              label: 'Principal Name',
+              value: details.principalName,
+              icon: Icons.person_outline,
+            ),
+            _readOnlyField(
+              label: 'School Address',
+              value: addressParts.join(', '),
+              icon: Icons.location_on_outlined,
+            ),
+            _readOnlyField(
+              label: 'Website',
+              value: details.website,
+              icon: Icons.language_outlined,
+            ),
+            _readOnlyField(
+              label: 'School Type',
+              value: details.schoolType,
+              icon: Icons.apartment_outlined,
+            ),
+            _readOnlyField(
+              label: 'Status',
+              value: details.status,
+              icon: Icons.verified_outlined,
+            ),
+            _readOnlyField(
+              label: 'Established Year',
+              value: details.establishmentYear,
+              icon: Icons.event_outlined,
+            ),
+            _readOnlyField(
+              label: 'Affiliation Number',
+              value: details.affiliationNumber,
+              icon: Icons.assignment_outlined,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSchoolLogoSection(String? logoUrl) {
+    final hasLogo = logoUrl != null && logoUrl.trim().isNotEmpty;
+
     return Row(
       children: [
         Container(
           width: 78,
           height: 78,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
-          child: const Icon(Icons.school, size: 38, color: Color(0xFF2563EB)),
+          child: hasLogo
+              ? Image.network(
+                  logoUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.school,
+                    size: 38,
+                    color: Color(0xFF2563EB),
+                  ),
+                )
+              : const Icon(Icons.school, size: 38, color: Color(0xFF2563EB)),
         ),
         const SizedBox(width: 17),
-        Expanded(
+        const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'School Logo',
                 style: TextStyle(
                   fontSize: 13,
@@ -334,27 +436,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: Color(0xFF111827),
                 ),
               ),
-              const SizedBox(height: 5),
-              const Text(
-                'Upload your school logo.',
+              SizedBox(height: 5),
+              Text(
+                'Registered school logo',
                 style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 9),
-              OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Logo upload will be connected later.'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.upload_outlined, size: 17),
-                label: const Text('Upload Logo'),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _readOnlyField({
+    required String label,
+    required String? value,
+    required IconData icon,
+  }) {
+    final displayValue = value == null || value.trim().isEmpty
+        ? 'Not provided'
+        : value.trim();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF6B7280)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  displayValue,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -678,7 +816,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.cloud_outlined,
             title: 'Backend Connection',
             message:
-                'The admin portal is currently running with local dummy data. API and database settings will be added when the Spring Boot backend is connected.',
+                'School profile details are loaded from the connected Spring Boot API. Other preferences on this screen are currently local to this session.',
           ),
         ],
       ),
@@ -813,29 +951,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: children,
         );
       },
-    );
-  }
-
-  Widget _textField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, size: 18),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF2563EB)),
-        ),
-      ),
     );
   }
 

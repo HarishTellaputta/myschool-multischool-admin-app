@@ -42,15 +42,10 @@ class _SubjectsExcelCardState extends State<SubjectsExcelCard> {
       final defaultSheet = excel.getDefaultSheet();
 
       if (defaultSheet == null) {
-        throw Exception(
-          'Unable to create Excel sheet.',
-        );
+        throw Exception('Unable to create Excel sheet.');
       }
 
-      excel.rename(
-        defaultSheet,
-        'Subjects',
-      );
+      excel.rename(defaultSheet, 'Subjects');
 
       final sheet = excel['Subjects'];
 
@@ -114,9 +109,7 @@ class _SubjectsExcelCardState extends State<SubjectsExcelCard> {
       final bytes = excel.encode();
 
       if (bytes == null) {
-        throw Exception(
-          'Failed to generate Subjects Excel.',
-        );
+        throw Exception('Failed to generate Subjects Excel.');
       }
 
       await FileSaver.instance.saveFile(
@@ -167,39 +160,32 @@ class _SubjectsExcelCardState extends State<SubjectsExcelCard> {
         return;
       }
 
-      if (!pickedFile.name
-          .toLowerCase()
-          .endsWith('.xlsx')) {
-        throw Exception(
-          'Please select a valid .xlsx Excel file.',
-        );
+      if (!pickedFile.name.toLowerCase().endsWith('.xlsx')) {
+        throw Exception('Please select a valid .xlsx Excel file.');
       }
 
       if (pickedFile.bytes.isEmpty) {
-        throw Exception(
-          'Unable to read the selected Excel file.',
-        );
+        throw Exception('Unable to read the selected Excel file.');
       }
 
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-      final token = prefs.getString(
-        'jwt_token',
-      );
+      final token = prefs.getString('jwt_token');
+      
+      final schoolId = prefs.getInt('school_id');
 
       if (token == null || token.trim().isEmpty) {
-        throw Exception(
-          'Session expired. Please login again.',
-        );
+        throw Exception('Session expired. Please login again.');
       }
 
-      final subjectService = SubjectService(
-        token,
-      );
+      final subjectService = SubjectService(token);
 
-      final resultData =
-          await subjectService.importSubjectsExcel(
+
+      if (schoolId == null) {
+        throw Exception('School ID not found. Please login again.');
+      }
+
+      final resultData = await subjectService.importSubjectsExcel(
         schoolId: schoolId,
         fileBytes: pickedFile.bytes,
         fileName: pickedFile.name,
@@ -207,10 +193,7 @@ class _SubjectsExcelCardState extends State<SubjectsExcelCard> {
 
       if (!context.mounted) return;
 
-      await _showImportResult(
-        context,
-        resultData,
-      );
+      await _showImportResult(context, resultData);
     } catch (e) {
       if (!context.mounted) return;
 
@@ -236,36 +219,23 @@ class _SubjectsExcelCardState extends State<SubjectsExcelCard> {
     BuildContext context,
     Map<String, dynamic> data,
   ) async {
-    final total = _toInt(
-      data['totalRows'],
-    );
+    final total = _toInt(data['totalRows']);
 
-    final created = _toInt(
-      data['createdCount'],
-    );
+    final created = _toInt(data['createdCount']);
 
-    final updated = _toInt(
-      data['updatedCount'],
-    );
+    final updated = _toInt(data['updatedCount']);
 
-    final failed = _toInt(
-      data['failedCount'],
-    );
+    final failed = _toInt(data['failedCount']);
 
-    final message =
-        data['message']?.toString() ?? '';
+    final message = data['message']?.toString() ?? '';
 
     final rawErrors = data['errors'];
 
     final errors = rawErrors is List
         ? rawErrors
-            .map(
-              (e) => e.toString(),
-            )
-            .where(
-              (e) => e.trim().isNotEmpty,
-            )
-            .toList()
+              .map((e) => e.toString())
+              .where((e) => e.trim().isNotEmpty)
+              .toList()
         : <String>[];
 
     if (failed == 0) {
@@ -306,24 +276,17 @@ class _SubjectsExcelCardState extends State<SubjectsExcelCard> {
       return value.toInt();
     }
 
-    return int.tryParse(
-          value.toString(),
-        ) ??
-        0;
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   String _cleanErrorMessage(Object error) {
     final message = error.toString();
 
     if (message.startsWith('Exception:')) {
-      return message
-          .substring('Exception:'.length)
-          .trim();
+      return message.substring('Exception:'.length).trim();
     }
 
-    return message.isEmpty
-        ? 'Something went wrong.'
-        : message;
+    return message.isEmpty ? 'Something went wrong.' : message;
   }
 
   // ============================================================
@@ -359,12 +322,10 @@ class _SubjectsCard extends StatefulWidget {
   });
 
   @override
-  State<_SubjectsCard> createState() =>
-      _SubjectsCardState();
+  State<_SubjectsCard> createState() => _SubjectsCardState();
 }
 
-class _SubjectsCardState
-    extends State<_SubjectsCard> {
+class _SubjectsCardState extends State<_SubjectsCard> {
   bool _hovering = false;
 
   String get _statusText {
@@ -380,8 +341,7 @@ class _SubjectsCardState
   }
 
   Color get _statusColor {
-    if (widget.downloading ||
-        widget.importing) {
+    if (widget.downloading || widget.importing) {
       return const Color(0xFFD97706);
     }
 
@@ -389,8 +349,7 @@ class _SubjectsCardState
   }
 
   Color get _statusBackground {
-    if (widget.downloading ||
-        widget.importing) {
+    if (widget.downloading || widget.importing) {
       return const Color(0xFFFFF7ED);
     }
 
@@ -411,15 +370,12 @@ class _SubjectsCardState
         });
       },
       child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 220,
-        ),
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius:
-              BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: _hovering
                 ? const Color(0xFFD6E4FF)
@@ -427,59 +383,37 @@ class _SubjectsCardState
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(
-                _hovering ? 0.075 : 0.035,
-              ),
-              blurRadius:
-                  _hovering ? 22 : 12,
-              offset: Offset(
-                0,
-                _hovering ? 8 : 4,
-              ),
+              color: Colors.black.withOpacity(_hovering ? 0.075 : 0.035),
+              blurRadius: _hovering ? 22 : 12,
+              offset: Offset(0, _hovering ? 8 : 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==================================================
             // HEADER
             // ==================================================
 
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 46,
                   height: 46,
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        const LinearGradient(
-                      begin:
-                          Alignment.topLeft,
-                      end: Alignment
-                          .bottomRight,
-                      colors: [
-                        Color(0xFF2563EB),
-                        Color(0xFF4F46E5),
-                      ],
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
+                    borderRadius: BorderRadius.circular(13),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            const Color(
-                          0xFF2563EB,
-                        ).withOpacity(0.20),
+                        color: const Color(0xFF2563EB).withOpacity(0.20),
                         blurRadius: 12,
-                        offset:
-                            const Offset(0, 5),
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -494,9 +428,7 @@ class _SubjectsCardState
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
@@ -505,72 +437,42 @@ class _SubjectsCardState
                               'Subjects',
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight:
-                                    FontWeight
-                                        .w800,
-                                color:
-                                    Color(
-                                  0xFF111827,
-                                ),
-                                letterSpacing:
-                                    -0.2,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF111827),
+                                letterSpacing: -0.2,
                               ),
                             ),
                           ),
 
                           // STATUS
                           AnimatedContainer(
-                            duration:
-                                const Duration(
-                              milliseconds: 200,
-                            ),
-                            padding:
-                                const EdgeInsets
-                                    .symmetric(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 9,
                               vertical: 5,
                             ),
-                            decoration:
-                                BoxDecoration(
-                              color:
-                                  _statusBackground,
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(
-                                20,
-                              ),
+                            decoration: BoxDecoration(
+                              color: _statusBackground,
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
-                              mainAxisSize:
-                                  MainAxisSize
-                                      .min,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
                                   width: 6,
                                   height: 6,
-                                  decoration:
-                                      BoxDecoration(
-                                    color:
-                                        _statusColor,
-                                    shape:
-                                        BoxShape
-                                            .circle,
+                                  decoration: BoxDecoration(
+                                    color: _statusColor,
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 5,
-                                ),
+                                const SizedBox(width: 5),
                                 Text(
                                   _statusText,
-                                  style:
-                                      TextStyle(
-                                    fontSize:
-                                        9.5,
-                                    fontWeight:
-                                        FontWeight
-                                            .w700,
-                                    color:
-                                        _statusColor,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: _statusColor,
                                   ),
                                 ),
                               ],
@@ -585,8 +487,7 @@ class _SubjectsCardState
                         'Manage subject records using Excel',
                         style: TextStyle(
                           fontSize: 11.5,
-                          color:
-                              Color(0xFF6B7280),
+                          color: Color(0xFF6B7280),
                           height: 1.3,
                         ),
                       ),
@@ -601,33 +502,20 @@ class _SubjectsCardState
             // ==================================================
             // INFO STRIP
             // ==================================================
-
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 9,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
-                color:
-                    const Color(0xFFF8FAFC),
-                borderRadius:
-                    BorderRadius.circular(
-                  10,
-                ),
-                border: Border.all(
-                  color:
-                      const Color(0xFFEEF2F7),
-                ),
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFEEF2F7)),
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.menu_book_outlined,
                     size: 15,
-                    color:
-                        Color(0xFF64748B),
+                    color: Color(0xFF64748B),
                   ),
                   const SizedBox(width: 7),
                   const Expanded(
@@ -635,10 +523,8 @@ class _SubjectsCardState
                       'Code • Name • Description • Status',
                       style: TextStyle(
                         fontSize: 10.5,
-                        fontWeight:
-                            FontWeight.w600,
-                        color:
-                            Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
                       ),
                     ),
                   ),
@@ -651,25 +537,18 @@ class _SubjectsCardState
             // ==================================================
             // ACTION BUTTONS
             // ==================================================
-
             Row(
               children: [
                 // DOWNLOAD
                 Expanded(
-                  child:
-                      _PremiumSubjectActionButton(
+                  child: _PremiumSubjectActionButton(
                     label: widget.downloading
                         ? 'Downloading...'
                         : 'Download Sample',
-                    icon:
-                        Icons.download_rounded,
+                    icon: Icons.download_rounded,
                     primary: true,
-                    loading:
-                        widget.downloading,
-                    onPressed:
-                        widget.downloading
-                            ? null
-                            : widget.onGenerate,
+                    loading: widget.downloading,
+                    onPressed: widget.downloading ? null : widget.onGenerate,
                   ),
                 ),
 
@@ -677,20 +556,12 @@ class _SubjectsCardState
 
                 // IMPORT
                 Expanded(
-                  child:
-                      _PremiumSubjectActionButton(
-                    label: widget.importing
-                        ? 'Importing...'
-                        : 'Import Excel',
-                    icon:
-                        Icons.upload_file_rounded,
+                  child: _PremiumSubjectActionButton(
+                    label: widget.importing ? 'Importing...' : 'Import Excel',
+                    icon: Icons.upload_file_rounded,
                     primary: false,
-                    loading:
-                        widget.importing,
-                    onPressed:
-                        widget.importing
-                            ? null
-                            : widget.onImport,
+                    loading: widget.importing,
+                    onPressed: widget.importing ? null : widget.onImport,
                   ),
                 ),
               ],
@@ -701,24 +572,20 @@ class _SubjectsCardState
             // ==================================================
             // FOOTER
             // ==================================================
-
             Row(
               children: [
                 const Icon(
                   Icons.description_outlined,
                   size: 13,
-                  color:
-                      Color(0xFF94A3B8),
+                  color: Color(0xFF94A3B8),
                 ),
                 const SizedBox(width: 5),
                 const Text(
                   '.xlsx format supported',
                   style: TextStyle(
                     fontSize: 9.5,
-                    color:
-                        Color(0xFF94A3B8),
-                    fontWeight:
-                        FontWeight.w500,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
 
@@ -727,18 +594,15 @@ class _SubjectsCardState
                 const Icon(
                   Icons.lock_outline_rounded,
                   size: 12,
-                  color:
-                      Color(0xFF94A3B8),
+                  color: Color(0xFF94A3B8),
                 ),
                 const SizedBox(width: 4),
                 const Text(
                   'Secure import',
                   style: TextStyle(
                     fontSize: 9.5,
-                    color:
-                        Color(0xFF94A3B8),
-                    fontWeight:
-                        FontWeight.w500,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -754,8 +618,7 @@ class _SubjectsCardState
 // PREMIUM ACTION BUTTON
 // ================================================================
 
-class _PremiumSubjectActionButton
-    extends StatelessWidget {
+class _PremiumSubjectActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool primary;
@@ -776,64 +639,43 @@ class _PremiumSubjectActionButton
       return ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              const Color(0xFF2563EB),
+          backgroundColor: const Color(0xFF2563EB),
           foregroundColor: Colors.white,
-          disabledBackgroundColor:
-              const Color(0xFF93C5FD),
-          disabledForegroundColor:
-              Colors.white,
+          disabledBackgroundColor: const Color(0xFF93C5FD),
+          disabledForegroundColor: Colors.white,
           elevation: 0,
-          padding:
-              const EdgeInsets.symmetric(
-            vertical: 12,
-            horizontal: 8,
-          ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(10),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         child: AnimatedSwitcher(
-          duration:
-              const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 180),
           child: Row(
-            key: ValueKey(
-              loading
-                  ? 'loading'
-                  : 'normal',
-            ),
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            key: ValueKey(loading ? 'loading' : 'normal'),
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (loading)
                 const SizedBox(
                   width: 15,
                   height: 15,
-                  child:
-                      CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white,
                   ),
                 )
               else
-                Icon(
-                  icon,
-                  size: 16,
-                ),
+                Icon(icon, size: 16),
 
               const SizedBox(width: 7),
 
               Flexible(
                 child: Text(
                   label,
-                  overflow:
-                      TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 10.5,
-                    fontWeight:
-                        FontWeight.w700,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -846,66 +688,40 @@ class _PremiumSubjectActionButton
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor:
-            const Color(0xFF2563EB),
-        disabledForegroundColor:
-            const Color(0xFF2563EB),
+        foregroundColor: const Color(0xFF2563EB),
+        disabledForegroundColor: const Color(0xFF2563EB),
         backgroundColor: Colors.white,
         side: BorderSide(
-          color: loading
-              ? const Color(0xFF93C5FD)
-              : const Color(0xFFD4DDF0),
+          color: loading ? const Color(0xFF93C5FD) : const Color(0xFFD4DDF0),
           width: 1.1,
         ),
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 11,
-          horizontal: 8,
-        ),
-        shape:
-            RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(10),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       child: AnimatedSwitcher(
-        duration:
-            const Duration(milliseconds: 180),
+        duration: const Duration(milliseconds: 180),
         child: Row(
-          key: ValueKey(
-            loading
-                ? 'loading'
-                : 'normal',
-          ),
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          key: ValueKey(loading ? 'loading' : 'normal'),
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (loading)
               const SizedBox(
                 width: 15,
                 height: 15,
-                child:
-                    CircularProgressIndicator(
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                icon,
-                size: 16,
-              ),
+              Icon(icon, size: 16),
 
             const SizedBox(width: 7),
 
             Flexible(
               child: Text(
                 label,
-                overflow:
-                    TextOverflow.ellipsis,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 10.5,
-                  fontWeight:
-                      FontWeight.w700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),

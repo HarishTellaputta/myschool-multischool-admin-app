@@ -7,7 +7,7 @@ class NoticeService {
   NoticeService(String token)
     : _dio = Dio(
         BaseOptions(
-          baseUrl: 'http://localhost:8080',
+          baseUrl: 'http://localhost:8081',
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 15),
           headers: {

@@ -12,7 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FeeService {
   final Dio _dio;
 
-  FeeService({String baseUrl = 'http://localhost:8080'})
+  FeeService({String baseUrl = 'http://localhost:8081'})
     : _dio = Dio(
         BaseOptions(
           baseUrl: baseUrl,

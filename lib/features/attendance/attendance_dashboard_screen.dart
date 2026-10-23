@@ -33,7 +33,7 @@ class AttendanceDashboardScreen extends StatefulWidget {
 }
 
 class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen> {
-  static const int _schoolId = 1;
+  int? _schoolId;
   final apiClient = ApiClient();
   AttendanceService? _attendanceService;
   StudentService? _studentService;
@@ -67,15 +67,26 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen> {
   Future<void> _initialize() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+
       final token = prefs.getString('jwt_token');
+      final schoolIdValue = prefs.get('school_id');
 
       if (token == null || token.isEmpty) {
         throw Exception('Session expired. Please login again.');
       }
 
+      final schoolId = schoolIdValue is int
+          ? schoolIdValue
+          : int.tryParse(schoolIdValue?.toString() ?? '');
+
+      if (schoolId == null || schoolId <= 0) {
+        throw Exception('School ID not found. Please login again.');
+      }
+
+      _schoolId = schoolId;
+
       _attendanceService = AttendanceService(token);
       _studentService = StudentService(token);
-
       _classService = ClassService(apiClient);
 
       await _loadClasses();
@@ -90,7 +101,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen> {
   }
 
   Future<void> _loadClasses() async {
-    if (_classService == null) return;
+   if (_classService == null || _schoolId == null) return;
 
     setState(() {
       _isLoading = true;
@@ -98,7 +109,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen> {
     });
 
     try {
-      final classes = await _classService!.getClassesBySchool(_schoolId);
+      final classes = await _classService!.getClassesBySchool(_schoolId!);
 
       if (!mounted) return;
 

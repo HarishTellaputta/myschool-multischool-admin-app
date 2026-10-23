@@ -63,6 +63,18 @@ class _ExamsScreenState extends State<ExamsScreen> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
 
+      final schoolId = prefs.getInt('school_id');
+
+      if (schoolId == null || schoolId <= 0) {
+        if (!mounted) return;
+
+        setState(() {
+          isLoading = false;
+          errorMessage = 'School ID not found. Please login again.';
+        });
+        return;
+      }
+
       debugPrint('========================================');
       debugPrint('EXAM SCREEN INITIALIZE');
       debugPrint('TOKEN EXISTS: ${token != null && token.isNotEmpty}');
