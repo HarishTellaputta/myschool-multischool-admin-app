@@ -108,18 +108,18 @@ class AdminSidebar extends StatelessWidget {
                   title: 'Exams',
                 ),
 
-                _buildMenuItem(
-                  index: 11,
-                  icon: Icons.psychology_rounded,
-                  title: 'MCQ Tests',
-                  isNew: true,
-                ),
+                // _buildMenuItem(
+                //   index: 11,
+                //   icon: Icons.psychology_rounded,
+                //   title: 'MCQ Tests',
+                //   isNew: true,
+                // ),
 
-                _buildMenuItem(
-                  index: 12,
-                  icon: Icons.bar_chart_rounded,
-                  title: 'Results',
-                ),
+                // _buildMenuItem(
+                //   index: 12,
+                //   icon: Icons.bar_chart_rounded,
+                //   title: 'Results',
+                // ),
 
                 const SizedBox(height: 12),
 
@@ -152,11 +152,11 @@ class AdminSidebar extends StatelessWidget {
                   title: 'Report Cards',
                 ),
 
-                _buildMenuItem(
-                  icon: Icons.cake_rounded,
-                  title: 'Birthdays',
-                  index: 19,
-                ),
+                // _buildMenuItem(
+                //   icon: Icons.cake_rounded,
+                //   title: 'Birthdays',
+                //   index: 19,
+                // ),
 
                 _buildMenuItem(
                   icon: Icons.table_view_rounded,

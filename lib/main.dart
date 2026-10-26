@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartkids_admin/features/auth/login_screen.dart';
 
 import 'features/auth/register_screen.dart';
 
@@ -18,7 +19,8 @@ class SmartKidsAdminApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Arial',
       ),
-      home:RegisterScreen(),
+      home:LoginScreen()
+      //home:RegisterScreen(),
       //home: const AdminDashboardScreen(),
     );
   }
