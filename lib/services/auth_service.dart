@@ -44,15 +44,27 @@ class AuthService {
   // =========================
 
  
+// =========================
+// LOGIN
+// =========================
+
 Future<String> login({
+  required String schoolCode,
   required String username,
   required String password,
 }) async {
   try {
+    final normalizedSchoolCode = schoolCode.trim().toUpperCase();
+
+    if (normalizedSchoolCode.isEmpty) {
+      throw Exception('Please enter school code');
+    }
+
     final response = await apiClient.dio.post(
       '/auth/login',
       data: {
-        'username': username,
+        'schoolCode': normalizedSchoolCode,
+        'username': username.trim(),
         'password': password,
       },
     );
@@ -82,11 +94,13 @@ Future<String> login({
     }
 
     final parsedUserId = int.tryParse(userId.toString());
+
     if (parsedUserId == null) {
       throw Exception('Invalid user ID received');
     }
 
     int? parsedSchoolId;
+
     if (schoolId != null) {
       parsedSchoolId = int.tryParse(schoolId.toString());
 
@@ -98,14 +112,14 @@ Future<String> login({
     final jwtToken = token.toString();
     final prefs = await SharedPreferences.getInstance();
 
-    // Clear any previous user's session before saving this one.
+    // Clear the previous session's school ID.
     await prefs.remove('school_id');
 
     await prefs.setString('jwt_token', jwtToken);
     await prefs.setInt('user_id', parsedUserId);
     await prefs.setString(
       'username',
-      responseUsername?.toString() ?? username,
+      responseUsername?.toString() ?? username.trim(),
     );
     await prefs.setString('user_role', role.toString());
 
@@ -113,7 +127,6 @@ Future<String> login({
       await prefs.setInt('school_id', parsedSchoolId);
     }
 
-    // Do not print the JWT or the full login response.
     print('Login successful');
     print('USER ID: $parsedUserId');
     print('ROLE: $role');
@@ -121,18 +134,17 @@ Future<String> login({
 
     return jwtToken;
   } on DioException catch (e) {
-    final data = e.response?.data;
+    final errorData = e.response?.data;
 
     print('LOGIN STATUS: ${e.response?.statusCode}');
 
     throw Exception(
-      data is Map
-          ? data['message']?.toString() ?? 'Login failed'
+      errorData is Map
+          ? errorData['message']?.toString() ?? 'Login failed'
           : 'Login failed',
     );
   }
-}
- // =========================
+} // =========================
   // LOGOUT
   // =========================
 
@@ -158,34 +170,57 @@ Future<void> logout() async {
   // FORGOT PASSWORD
   // =========================
 
-  Future<Map<String, dynamic>> forgotPassword({required String email}) async {
-    try {
-      final response = await apiClient.dio.post(
-        '/auth/forgot-password',
-        data: {'email': email},
-      );
+ Future<String> forgotPassword({
+  required String schoolCode,
+  required String email,
+}) async {
+  try {
+    final normalizedSchoolCode = schoolCode.trim().toUpperCase();
+    final normalizedEmail = email.trim();
 
-      print('FORGOT PASSWORD STATUS: ${response.statusCode}');
+    if (normalizedSchoolCode.isEmpty) {
+      throw Exception('Please enter school code');
+    }
 
-      final data = response.data;
+    if (normalizedEmail.isEmpty) {
+      throw Exception('Please enter your email');
+    }
 
-      if (data is Map) {
-        return Map<String, dynamic>.from(data);
+    final response = await apiClient.dio.post(
+      '/auth/forgot-password',
+      data: {
+        'schoolCode': normalizedSchoolCode,
+        'email': normalizedEmail,
+      },
+    );
+
+    final data = response.data;
+
+    if (data is Map) {
+      final token = data['resetToken'] ?? data['token'];
+
+      if (token != null && token.toString().trim().isNotEmpty) {
+        return token.toString().trim();
       }
 
-      throw Exception('Invalid forgot-password API response');
-    } on DioException catch (e) {
-      final data = e.response?.data;
-
       throw Exception(
-        data is Map
-            ? data['message'] ?? 'Forgot password failed'
-            : data?.toString() ?? 'Forgot password failed',
+        data['message']?.toString() ??
+            'The server did not return a reset token.',
       );
     }
-  }
 
-  // =========================
+    throw Exception('Invalid forgot-password API response.');
+  } on DioException catch (e) {
+    final data = e.response?.data;
+
+    throw Exception(
+      data is Map
+          ? data['message']?.toString() ??
+              'Forgot password request failed.'
+          : 'Forgot password request failed.',
+    );
+  }
+}// =========================
   // RESET PASSWORD
   // =========================
 
