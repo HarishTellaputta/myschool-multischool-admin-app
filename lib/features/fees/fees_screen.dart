@@ -45,6 +45,7 @@ class _FeesScreenState extends State<FeesScreen> {
   final TextEditingController searchController = TextEditingController();
 
   List<StudentFeeModel> feeRecords = [];
+  
   List<SchoolClass> classes = [];
   List<Section> sections = [];
   List<Student> students = [];
@@ -326,6 +327,29 @@ class _FeesScreenState extends State<FeesScreen> {
     }).toList();
   }
 
+  List<_StudentFeeSummary> _groupFeeRecords(List<StudentFeeModel> records) {
+    final Map<int, List<StudentFeeModel>> grouped = {};
+
+    for (final record in records) {
+      final studentId = record.studentId;
+
+      if (studentId == null) continue;
+
+      grouped.putIfAbsent(studentId, () => []).add(record);
+    }
+
+    final summaries = grouped.entries.map((entry) {
+      return _StudentFeeSummary(studentId: entry.key, records: entry.value);
+    }).toList();
+
+    summaries.sort(
+      (a, b) =>
+          a.studentName.toLowerCase().compareTo(b.studentName.toLowerCase()),
+    );
+
+    return summaries;
+  }
+
   bool _sectionBelongsToClass(int sectionId, int classId) {
     final section = _findSectionById(sectionId);
 
@@ -436,39 +460,6 @@ class _FeesScreenState extends State<FeesScreen> {
 
     return null;
   }
-
-  // Future<void> _applyFeeStructure(Map<String, dynamic> structure) async {
-  //   final structureId = structure['id'];
-
-  //   if (structureId == null) {
-  //     _showMessage('Fee structure ID not found.', isError: true);
-  //     return;
-  //   }
-
-  //   try {
-  //     setState(() {
-  //       _isLoadingFeeStructures = true;
-  //     });
-
-  //     await _feeService.applyFeeStructure(int.parse(structureId.toString()));
-
-  //     if (!mounted) return;
-
-  //     _showMessage('Fee structure applied successfully.');
-
-  //     await _loadData();
-  //   } catch (e) {
-  //     if (!mounted) return;
-
-  //     _showMessage(e.toString().replaceFirst('Exception: ', ''), isError: true);
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() {
-  //         _isLoadingFeeStructures = false;
-  //       });
-  //     }
-  //   }
-  // }
 
   Future<void> _openFeeDetails(StudentFeeModel record) async {
     final result = await Navigator.push<bool>(
@@ -1127,7 +1118,7 @@ class _FeesScreenState extends State<FeesScreen> {
                   // const SizedBox(height: 18),
                   // _buildFeeStructures(),
                   const SizedBox(height: 18),
-                  _buildFeeTable(records),
+                  _buildFeeTable(_groupFeeRecords(records)),
                 ],
               ),
             ),
@@ -1606,6 +1597,7 @@ class _FeesScreenState extends State<FeesScreen> {
               DropdownMenuItem(value: 'All', child: Text('All Status')),
               DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
               DropdownMenuItem(value: 'PARTIAL', child: Text('Partial')),
+              DropdownMenuItem(value: 'PAID', child: Text('Paid')),
             ],
             onChanged: (value) {
               if (value == null) return;
@@ -1646,367 +1638,7 @@ class _FeesScreenState extends State<FeesScreen> {
     );
   }
 
-  // Widget _buildFeeStructures() {
-  //   return Container(
-  //     width: double.infinity,
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(18),
-  //       border: Border.all(color: const Color(0xFFE5E7EB)),
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Padding(
-  //           padding: const EdgeInsets.fromLTRB(20, 19, 20, 14),
-  //           child: Row(
-  //             children: [
-  //               const Expanded(
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     Text(
-  //                       'Fee Structures',
-  //                       style: TextStyle(
-  //                         fontSize: 18,
-  //                         fontWeight: FontWeight.w800,
-  //                         color: Color(0xFF0F172A),
-  //                       ),
-  //                     ),
-  //                     SizedBox(height: 4),
-  //                     Text(
-  //                       'Apply configured fees to students',
-  //                       style: TextStyle(
-  //                         fontSize: 11,
-  //                         color: Color(0xFF64748B),
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //               Container(
-  //                 padding: const EdgeInsets.symmetric(
-  //                   horizontal: 11,
-  //                   vertical: 7,
-  //                 ),
-  //                 decoration: BoxDecoration(
-  //                   color: const Color(0xFFF1F5F9),
-  //                   borderRadius: BorderRadius.circular(20),
-  //                 ),
-  //                 child: Text(
-  //                   '${feeStructures.length} structures',
-  //                   style: const TextStyle(
-  //                     fontSize: 11,
-  //                     fontWeight: FontWeight.w700,
-  //                     color: Color(0xFF475569),
-  //                   ),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-
-  //         const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-  //         if (feeStructures.isEmpty)
-  //           const Padding(
-  //             padding: EdgeInsets.symmetric(vertical: 35),
-  //             child: Center(
-  //               child: Text(
-  //                 'No fee structures found.',
-  //                 style: TextStyle(color: Color(0xFF64748B)),
-  //               ),
-  //             ),
-  //           )
-  //         else
-  //           LayoutBuilder(
-  //             builder: (context, constraints) {
-  //               return SingleChildScrollView(
-  //                 scrollDirection: Axis.horizontal,
-  //                 child: ConstrainedBox(
-  //                   constraints: BoxConstraints(minWidth: constraints.maxWidth),
-  //                   child: DataTable(
-  //                     headingRowHeight: 48,
-  //                     dataRowMinHeight: 62,
-  //                     dataRowMaxHeight: 70,
-  //                     columnSpacing: 30,
-  //                     horizontalMargin: 20,
-  //                     columns: const [
-  //                       DataColumn(label: Text('FEE')),
-  //                       DataColumn(label: Text('CLASS')),
-  //                       DataColumn(label: Text('AMOUNT')),
-  //                       DataColumn(label: Text('DUE DATE')),
-  //                       DataColumn(label: Text('STATUS')),
-  //                       DataColumn(label: Text('ACTION')),
-  //                     ],
-  //                     rows: feeStructures.map((item) {
-  //                       final structure = Map<String, dynamic>.from(item);
-
-  //                       final id = structure['id'];
-
-  //                       final name = structure['name']?.toString() ?? '-';
-
-  //                       final amount =
-  //                           double.tryParse(
-  //                             structure['amount']?.toString() ?? '',
-  //                           ) ??
-  //                           0;
-
-  //                       final dueDate = structure['dueDate']?.toString() ?? '-';
-
-  //                       final status =
-  //                           structure['status']?.toString() ?? 'ACTIVE';
-
-  //                       final classId = structure['classId'];
-
-  //                       String className = '-';
-
-  //                       if (classId != null) {
-  //                         final parsedClassId = int.tryParse(
-  //                           classId.toString(),
-  //                         );
-
-  //                         for (final c in classes) {
-  //                           if (c.id == parsedClassId) {
-  //                             className = c.name ?? c.grade ?? '-';
-  //                             break;
-  //                           }
-  //                         }
-  //                       }
-
-  //                       return DataRow(
-  //                         cells: [
-  //                           DataCell(
-  //                             Text(
-  //                               name,
-  //                               style: const TextStyle(
-  //                                 fontWeight: FontWeight.w700,
-  //                               ),
-  //                             ),
-  //                           ),
-  //                           DataCell(Text(className)),
-  //                           DataCell(Text(_formatCurrency(amount))),
-  //                           DataCell(Text(_formatDate(dueDate))),
-  //                           DataCell(_statusChip(status)),
-  //                           DataCell(
-  //                             ElevatedButton.icon(
-  //                               onPressed: _isLoadingFeeStructures
-  //                                   ? null
-  //                                   : () {
-  //                                       _applyFeeStructure(structure);
-  //                                     },
-  //                               icon: const Icon(
-  //                                 Icons.play_arrow_rounded,
-  //                                 size: 17,
-  //                               ),
-  //                               label: const Text('Apply'),
-  //                               style: ElevatedButton.styleFrom(
-  //                                 backgroundColor: const Color(0xFF2563EB),
-  //                                 foregroundColor: Colors.white,
-  //                                 elevation: 0,
-  //                                 shape: RoundedRectangleBorder(
-  //                                   borderRadius: BorderRadius.circular(10),
-  //                                 ),
-  //                               ),
-  //                             ),
-  //                           ),
-  //                         ],
-  //                       );
-  //                     }).toList(),
-  //                   ),
-  //                 ),
-  //               );
-  //             },
-  //           ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Future<void> _showFeeStructuresDialog() async {
-  //   try {
-  //     final structures = await _feeService.getFeeStructures();
-
-  //     if (!mounted) return;
-
-  //     showDialog(
-  //       context: context,
-  //       builder: (context) {
-  //         int? applyingId;
-
-  //         return StatefulBuilder(
-  //           builder: (context, setDialogState) {
-  //             return AlertDialog(
-  //               title: const Row(
-  //                 children: [
-  //                   Icon(Icons.account_balance_wallet_outlined),
-  //                   SizedBox(width: 10),
-  //                   Text('Fee Structures'),
-  //                 ],
-  //               ),
-  //               content: SizedBox(
-  //                 width: 750,
-  //                 child: structures.isEmpty
-  //                     ? const Center(
-  //                         child: Padding(
-  //                           padding: EdgeInsets.all(30),
-  //                           child: Text(
-  //                             'No fee structures found.',
-  //                             style: TextStyle(fontSize: 16),
-  //                           ),
-  //                         ),
-  //                       )
-  //                     : SingleChildScrollView(
-  //                         child: Column(
-  //                           mainAxisSize: MainAxisSize.min,
-  //                           children: structures.map<Widget>((item) {
-  //                             final structure = Map<String, dynamic>.from(item);
-
-  //                             final int? structureId = structure['id'] is int
-  //                                 ? structure['id']
-  //                                 : int.tryParse('${structure['id'] ?? ''}');
-
-  //                             final String name =
-  //                                 '${structure['name'] ?? 'Fee Structure'}';
-
-  //                             final String amount =
-  //                                 '${structure['amount'] ?? 0}';
-
-  //                             final String className =
-  //                                 '${structure['className'] ?? structure['class_name'] ?? structure['classId'] ?? '-'}';
-
-  //                             final String dueDate =
-  //                                 '${structure['dueDate'] ?? structure['due_date'] ?? '-'}';
-
-  //                             final bool isApplying = applyingId == structureId;
-
-  //                             return Card(
-  //                               margin: const EdgeInsets.only(bottom: 10),
-  //                               child: Padding(
-  //                                 padding: const EdgeInsets.all(12),
-  //                                 child: Row(
-  //                                   children: [
-  //                                     Expanded(
-  //                                       flex: 3,
-  //                                       child: Column(
-  //                                         crossAxisAlignment:
-  //                                             CrossAxisAlignment.start,
-  //                                         children: [
-  //                                           Text(
-  //                                             name,
-  //                                             style: const TextStyle(
-  //                                               fontWeight: FontWeight.bold,
-  //                                               fontSize: 15,
-  //                                             ),
-  //                                           ),
-  //                                           const SizedBox(height: 5),
-  //                                           Text('Class: $className'),
-  //                                           Text('Amount: ₹$amount'),
-  //                                           Text('Due Date: $dueDate'),
-  //                                         ],
-  //                                       ),
-  //                                     ),
-
-  //                                     ElevatedButton.icon(
-  //                                       onPressed:
-  //                                           structureId == null || isApplying
-  //                                           ? null
-  //                                           : () async {
-  //                                               setDialogState(() {
-  //                                                 applyingId = structureId;
-  //                                               });
-
-  //                                               try {
-  //                                                 await _feeService
-  //                                                     .applyFeeStructure(
-  //                                                       structureId,
-  //                                                     );
-
-  //                                                 if (!mounted) return;
-
-  //                                                 Navigator.pop(context);
-
-  //                                                 ScaffoldMessenger.of(
-  //                                                   context,
-  //                                                 ).showSnackBar(
-  //                                                   const SnackBar(
-  //                                                     content: Text(
-  //                                                       'Fee structure applied successfully.',
-  //                                                     ),
-  //                                                     backgroundColor:
-  //                                                         Colors.green,
-  //                                                   ),
-  //                                                 );
-
-  //                                                 await _loadData();
-  //                                               } catch (e) {
-  //                                                 setDialogState(() {
-  //                                                   applyingId = null;
-  //                                                 });
-
-  //                                                 if (!mounted) return;
-
-  //                                                 ScaffoldMessenger.of(
-  //                                                   context,
-  //                                                 ).showSnackBar(
-  //                                                   SnackBar(
-  //                                                     content: Text(
-  //                                                       'Failed to apply fee structure: $e',
-  //                                                     ),
-  //                                                     backgroundColor:
-  //                                                         Colors.red,
-  //                                                   ),
-  //                                                 );
-  //                                               }
-  //                                             },
-  //                                       icon: isApplying
-  //                                           ? const SizedBox(
-  //                                               width: 16,
-  //                                               height: 16,
-  //                                               child:
-  //                                                   CircularProgressIndicator(
-  //                                                     strokeWidth: 2,
-  //                                                   ),
-  //                                             )
-  //                                           : const Icon(
-  //                                               Icons.play_arrow_rounded,
-  //                                             ),
-  //                                       label: Text(
-  //                                         isApplying ? 'Applying...' : 'Apply',
-  //                                       ),
-  //                                     ),
-  //                                   ],
-  //                                 ),
-  //                               ),
-  //                             );
-  //                           }).toList(),
-  //                         ),
-  //                       ),
-  //               ),
-  //               actions: [
-  //                 TextButton(
-  //                   onPressed: () => Navigator.pop(context),
-  //                   child: const Text('Close'),
-  //                 ),
-  //               ],
-  //             );
-  //           },
-  //         );
-  //       },
-  //     );
-  //   } catch (e) {
-  //     if (!mounted) return;
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Failed to load fee structures: $e'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
-
-  Widget _buildFeeTable(List<StudentFeeModel> records) {
+  Widget _buildFeeTable(List<_StudentFeeSummary> summaries) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -2026,7 +1658,7 @@ class _FeesScreenState extends State<FeesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Fee Records',
+                        'Student Fee Summary',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -2035,7 +1667,7 @@ class _FeesScreenState extends State<FeesScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Click a student record to view payment details',
+                        'Tuition and transport fees grouped by student',
                         style: TextStyle(
                           fontSize: 11,
                           color: Color(0xFF64748B),
@@ -2054,7 +1686,7 @@ class _FeesScreenState extends State<FeesScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '${records.length} records',
+                    '${summaries.length} students',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -2073,7 +1705,7 @@ class _FeesScreenState extends State<FeesScreen> {
             )
           else if (errorMessage != null)
             _errorState()
-          else if (records.isEmpty)
+          else if (summaries.isEmpty)
             _emptyState()
           else
             LayoutBuilder(
@@ -2086,7 +1718,7 @@ class _FeesScreenState extends State<FeesScreen> {
                       headingRowHeight: 48,
                       dataRowMinHeight: 68,
                       dataRowMaxHeight: 76,
-                      columnSpacing: 26,
+                      columnSpacing: 24,
                       horizontalMargin: 20,
                       showCheckboxColumn: false,
                       headingTextStyle: const TextStyle(
@@ -2096,82 +1728,89 @@ class _FeesScreenState extends State<FeesScreen> {
                       ),
                       columns: const [
                         DataColumn(label: Text('STUDENT')),
-                        //DataColumn(label: Text('CLASS')),
-                        DataColumn(label: Text('FEE')),
+                        DataColumn(label: Text('TUITION FEE')),
+                        DataColumn(label: Text('TRANSPORT FEE')),
+                        DataColumn(label: Text('OTHER FEES')),
                         DataColumn(label: Text('TOTAL')),
                         DataColumn(label: Text('PAID')),
                         DataColumn(label: Text('OUTSTANDING')),
-                        DataColumn(label: Text('DUE DATE')),
                         DataColumn(label: Text('STATUS')),
                         DataColumn(label: Text('ACTION')),
                       ],
-                      rows: records.map((record) {
+                      rows: summaries.map((summary) {
+                        final status = summary.pendingAmount <= 0
+                            ? 'PAID'
+                            : summary.paidAmount > 0
+                            ? 'PARTIAL'
+                            : 'PENDING';
+
                         return DataRow(
-                          onSelectChanged: (_) {
-                            _openFeeDetails(record);
-                          },
                           cells: [
                             DataCell(
-                              _studentCell(record),
-                              onTap: () => _openFeeDetails(record),
-                            ),
-                            // DataCell(Text(_classNameForFee(record))),
-                            DataCell(
-                              SizedBox(
-                                width: 130,
-                                child: Text(
-                                  record.feeName,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              onTap: () => _openFeeDetails(record),
-                            ),
-                            DataCell(
-                              Text(_formatCurrency(record.totalAmount)),
-                              onTap: () => _openFeeDetails(record),
+                              _studentCell(summary.records.first),
+                              onTap: () => _openStudentFeeDetails(summary),
                             ),
                             DataCell(
                               Text(
-                                _formatCurrency(record.paidAmount),
+                                _formatCurrency(summary.tuitionAmount),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              onTap: () => _openStudentFeeDetails(summary),
+                            ),
+                            DataCell(
+                              Text(
+                                _formatCurrency(summary.transportAmount),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              onTap: () => _openStudentFeeDetails(summary),
+                            ),
+                            DataCell(
+                              Text(_formatCurrency(summary.otherAmount)),
+                              onTap: () => _openStudentFeeDetails(summary),
+                            ),
+                            DataCell(
+                              Text(
+                                _formatCurrency(summary.totalAmount),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              onTap: () => _openStudentFeeDetails(summary),
+                            ),
+                            DataCell(
+                              Text(
+                                _formatCurrency(summary.paidAmount),
                                 style: const TextStyle(
                                   color: Color(0xFF059669),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              onTap: () => _openFeeDetails(record),
+                              onTap: () => _openStudentFeeDetails(summary),
                             ),
                             DataCell(
                               Text(
-                                _formatCurrency(record.pendingAmount),
+                                _formatCurrency(summary.pendingAmount),
                                 style: TextStyle(
-                                  color: record.pendingAmount > 0
+                                  color: summary.pendingAmount > 0
                                       ? const Color(0xFFDC2626)
                                       : const Color(0xFF059669),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              onTap: () => _openFeeDetails(record),
+                              onTap: () => _openStudentFeeDetails(summary),
                             ),
-                            DataCell(
-                              Text(_formatDate(record.dueDate)),
-                              onTap: () => _openFeeDetails(record),
-                            ),
-                            DataCell(
-                              _statusChip(_displayStatus(record)),
-                              onTap: () => _openFeeDetails(record),
-                            ),
+                            DataCell(_statusChip(status)),
                             DataCell(
                               IconButton(
-                                tooltip: 'Collect Payment',
-                                onPressed: record.pendingAmount > 0
-                                    ? () => _showAddPaymentDialog(record)
-                                    : null,
+                                tooltip: 'View student fees',
+                                onPressed: () =>
+                                    _openStudentFeeDetails(summary),
                                 icon: const Icon(
-                                  Icons.add_card_rounded,
+                                  Icons.visibility_outlined,
                                   size: 20,
                                 ),
                                 color: const Color(0xFF2563EB),
@@ -2189,6 +1828,26 @@ class _FeesScreenState extends State<FeesScreen> {
       ),
     );
   }
+
+Future<void> _openStudentFeeDetails(
+  _StudentFeeSummary summary,
+) async {
+  if (summary.records.isEmpty) return;
+
+  final result = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => FeeDetailsScreen(
+        record: summary.records.first,
+        studentRecords: summary.records,
+      ),
+    ),
+  );
+
+  if (result == true && mounted) {
+    await _loadData();
+  }
+}
 
   Widget _studentCell(StudentFeeModel record) {
     final name = record.studentName.isEmpty
@@ -2355,4 +2014,40 @@ class _FeesScreenState extends State<FeesScreen> {
       ),
     );
   }
+}
+
+class _StudentFeeSummary {
+  final int studentId;
+  final List<StudentFeeModel> records;
+
+  _StudentFeeSummary({required this.studentId, required this.records});
+
+  String get studentName {
+    final name = records.first.studentName;
+    return name.isEmpty ? 'Student #$studentId' : name;
+  }
+
+  double get tuitionAmount => records
+      .where((fee) => fee.feeName.toLowerCase().contains('tuition'))
+      .fold(0.0, (sum, fee) => sum + fee.totalAmount);
+
+  double get transportAmount => records
+      .where((fee) => fee.feeName.toLowerCase().contains('transport'))
+      .fold(0.0, (sum, fee) => sum + fee.totalAmount);
+
+  double get otherAmount => records
+      .where((fee) {
+        final name = fee.feeName.toLowerCase();
+        return !name.contains('tuition') && !name.contains('transport');
+      })
+      .fold(0.0, (sum, fee) => sum + fee.totalAmount);
+
+  double get totalAmount =>
+      records.fold(0.0, (sum, fee) => sum + fee.totalAmount);
+
+  double get paidAmount =>
+      records.fold(0.0, (sum, fee) => sum + fee.paidAmount);
+
+  double get pendingAmount =>
+      records.fold(0.0, (sum, fee) => sum + fee.pendingAmount);
 }

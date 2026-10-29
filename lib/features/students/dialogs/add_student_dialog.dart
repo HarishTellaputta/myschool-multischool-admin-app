@@ -44,6 +44,7 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
   String selectedGender = 'Male';
   String selectedBloodGroup = 'A+';
   String selectedStatus = 'ACTIVE';
+  bool transportRequired = false;
 
   bool isSaving = false;
   bool isLoadingDropdowns = true;
@@ -330,6 +331,7 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
         'parentId': selectedParent?.id,
 
         'status': selectedStatus,
+        'transportRequired': transportRequired,
       };
 
       debugPrint('========== CREATE STUDENT DATA ==========');
@@ -686,6 +688,36 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
           return '$label is required';
         }
 
+        return null;
+      },
+    );
+  }
+
+  Widget _transportRequiredDropdown() {
+    return DropdownButtonFormField<bool>(
+      initialValue: transportRequired,
+      isExpanded: true,
+      decoration: _premiumDropdownDecoration(
+        label: 'Transport Required',
+        icon: Icons.directions_bus_rounded,
+      ),
+      items: const [
+        DropdownMenuItem<bool>(value: true, child: Text('Yes')),
+        DropdownMenuItem<bool>(value: false, child: Text('No')),
+      ],
+      onChanged: isSaving
+          ? null
+          : (value) {
+              if (value != null) {
+                setState(() {
+                  transportRequired = value;
+                });
+              }
+            },
+      validator: (value) {
+        if (value == null) {
+          return 'Please select Transport Required';
+        }
         return null;
       },
     );
@@ -1522,6 +1554,10 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                   icon: Icons.event_outlined,
                   required: true,
                 ),
+
+                const SizedBox(height: 14),
+
+                _transportRequiredDropdown(),
 
                 const SizedBox(height: 14),
 

@@ -82,17 +82,17 @@ extension AdminDashboardActivityUI on _AdminDashboardScreenState {
                     onTap: () => _onMenuSelected(2),
                   ),
                 ),
-                SizedBox(
-                  width: width,
-                  child: _quickActionCard(
-                    title: 'MCQ Tests',
-                    subtitle: 'Manage online tests',
-                    icon: Icons.quiz_rounded,
-                    color: const Color(0xFF7C3AED),
-                    background: const Color(0xFFF5F3FF),
-                    onTap: () => _onMenuSelected(11),
-                  ),
-                ),
+                // SizedBox(
+                //   width: width,
+                //   child: _quickActionCard(
+                //     title: 'MCQ Tests',
+                //     subtitle: 'Manage online tests',
+                //     icon: Icons.quiz_rounded,
+                //     color: const Color(0xFF7C3AED),
+                //     background: const Color(0xFFF5F3FF),
+                //     onTap: () => _onMenuSelected(11),
+                //   ),
+                // ),
                 SizedBox(
                   width: width,
                   child: _quickActionCard(

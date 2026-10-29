@@ -22,6 +22,10 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
   String searchQuery = '';
   String selectedMethod = 'All';
 
+  String selectedDateFilter = 'All Dates';
+  DateTime? fromDate;
+  DateTime? toDate;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +71,9 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
   }
 
   List<FeePaymentModel> get filteredPayments {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     return payments.where((payment) {
       final matchesSearch =
           searchQuery.isEmpty ||
@@ -78,7 +85,58 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
       final matchesMethod =
           selectedMethod == 'All' || payment.paymentMethod == selectedMethod;
 
-      return matchesSearch && matchesMethod;
+      DateTime? paymentDate;
+      try {
+        paymentDate = DateTime.parse(payment.paymentDate);
+      } catch (_) {
+        paymentDate = null;
+      }
+
+      bool matchesDate = true;
+
+      if (selectedDateFilter == 'Today') {
+        matchesDate =
+            paymentDate != null &&
+            !paymentDate.isBefore(today) &&
+            paymentDate.isBefore(today.add(const Duration(days: 1)));
+      } else if (selectedDateFilter == 'This Week') {
+        final weekStart = today.subtract(Duration(days: today.weekday - 1));
+        final weekEnd = weekStart.add(const Duration(days: 7));
+
+        matchesDate =
+            paymentDate != null &&
+            !paymentDate.isBefore(weekStart) &&
+            paymentDate.isBefore(weekEnd);
+      } else if (selectedDateFilter == 'This Month') {
+        final monthStart = DateTime(now.year, now.month, 1);
+        final nextMonth = DateTime(now.year, now.month + 1, 1);
+
+        matchesDate =
+            paymentDate != null &&
+            !paymentDate.isBefore(monthStart) &&
+            paymentDate.isBefore(nextMonth);
+      } else if (selectedDateFilter == 'Custom Range') {
+        if (paymentDate == null || fromDate == null || toDate == null) {
+          matchesDate = false;
+        } else {
+          final start = DateTime(
+            fromDate!.year,
+            fromDate!.month,
+            fromDate!.day,
+          );
+          final endExclusive = DateTime(
+            toDate!.year,
+            toDate!.month,
+            toDate!.day,
+          ).add(const Duration(days: 1));
+
+          matchesDate =
+              !paymentDate.isBefore(start) &&
+              paymentDate.isBefore(endExclusive);
+        }
+      }
+
+      return matchesSearch && matchesMethod && matchesDate;
     }).toList();
   }
 
@@ -379,6 +437,13 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
   }
 
   Widget _buildSummary() {
+    final records = filteredPayments;
+
+    final collected = records.fold<double>(
+      0,
+      (sum, payment) => sum + payment.amount,
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final mobile = constraints.maxWidth < 720;
@@ -386,15 +451,15 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
         final cards = [
           _summaryCard(
             title: 'Total Payments',
-            value: '${payments.length}',
-            subtitle: 'Recorded transactions',
+            value: '${records.length}',
+            subtitle: 'Filtered transactions',
             icon: Icons.receipt_long_outlined,
             background: const Color(0xFFEFF6FF),
             iconColor: const Color(0xFF2563EB),
           ),
           _summaryCard(
             title: 'Total Collected',
-            value: _formatCurrency(totalCollected),
+            value: _formatCurrency(collected),
             subtitle: 'Amount received',
             icon: Icons.payments_outlined,
             background: const Color(0xFFECFDF5),
@@ -402,7 +467,7 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
           ),
           _summaryCard(
             title: 'UPI Payments',
-            value: '${payments.where((p) => p.paymentMethod == 'UPI').length}',
+            value: '${records.where((p) => p.paymentMethod == 'UPI').length}',
             subtitle: 'Digital transactions',
             icon: Icons.qr_code_rounded,
             background: const Color(0xFFF5F3FF),
@@ -410,7 +475,7 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
           ),
           _summaryCard(
             title: 'Cash Payments',
-            value: '${payments.where((p) => p.paymentMethod == 'CASH').length}',
+            value: '${records.where((p) => p.paymentMethod == 'CASH').length}',
             subtitle: 'Cash transactions',
             icon: Icons.account_balance_wallet_outlined,
             background: const Color(0xFFFFF7ED),
@@ -433,13 +498,10 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
 
         return Row(
           children: [
-            Expanded(child: cards[0]),
-            const SizedBox(width: 14),
-            Expanded(child: cards[1]),
-            const SizedBox(width: 14),
-            Expanded(child: cards[2]),
-            const SizedBox(width: 14),
-            Expanded(child: cards[3]),
+            for (int i = 0; i < cards.length; i++) ...[
+              if (i > 0) const SizedBox(width: 14),
+              Expanded(child: cards[i]),
+            ],
           ],
         );
       },
@@ -578,22 +640,127 @@ class _PaidPaymentsScreenState extends State<PaidPaymentsScreen> {
             },
           );
 
+          final dateDropdown = DropdownButtonFormField<String>(
+            initialValue: selectedDateFilter,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Payment Date',
+              prefixIcon: const Icon(Icons.calendar_month_rounded),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'All Dates', child: Text('All Dates')),
+              DropdownMenuItem(value: 'Today', child: Text('Today')),
+              DropdownMenuItem(value: 'This Week', child: Text('This Week')),
+              DropdownMenuItem(value: 'This Month', child: Text('This Month')),
+              DropdownMenuItem(
+                value: 'Custom Range',
+                child: Text('Custom Date Range'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+
+              setState(() {
+                selectedDateFilter = value;
+                if (value != 'Custom Range') {
+                  fromDate = null;
+                  toDate = null;
+                }
+              });
+
+              if (value == 'Custom Range') {
+                _selectCustomDateRange();
+              }
+            },
+          );
           if (mobile) {
             return Column(
-              children: [search, const SizedBox(height: 12), methodDropdown],
+              children: [
+                search,
+                const SizedBox(height: 12),
+                methodDropdown,
+                const SizedBox(height: 12),
+                dateDropdown,
+                if (selectedDateFilter == 'Custom Range' &&
+                    fromDate != null &&
+                    toDate != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_formatDate(fromDate!.toIso8601String())} - '
+                    '${_formatDate(toDate!.toIso8601String())}',
+                  ),
+                ],
+              ],
             );
           }
 
-          return Row(
+          return Column(
             children: [
-              Expanded(child: search),
-              const SizedBox(width: 12),
-              SizedBox(width: 260, child: methodDropdown),
+              Row(
+                children: [
+                  Expanded(child: search),
+                  const SizedBox(width: 12),
+                  SizedBox(width: 220, child: methodDropdown),
+                  const SizedBox(width: 12),
+                  SizedBox(width: 230, child: dateDropdown),
+                ],
+              ),
+              if (selectedDateFilter == 'Custom Range' &&
+                  fromDate != null &&
+                  toDate != null) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Selected: ${_formatDate(fromDate!.toIso8601String())} - '
+                    '${_formatDate(toDate!.toIso8601String())}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ],
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _selectCustomDateRange() async {
+    final now = DateTime.now();
+
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 5, 12, 31),
+      initialDateRange: fromDate != null && toDate != null
+          ? DateTimeRange(start: fromDate!, end: toDate!)
+          : null,
+    );
+
+    if (!mounted) return;
+
+    if (picked == null) {
+      setState(() {
+        selectedDateFilter = 'All Dates';
+        fromDate = null;
+        toDate = null;
+      });
+      return;
+    }
+
+    setState(() {
+      fromDate = picked.start;
+      toDate = picked.end;
+    });
   }
 
   Widget _buildPaymentTable(List<FeePaymentModel> records) {

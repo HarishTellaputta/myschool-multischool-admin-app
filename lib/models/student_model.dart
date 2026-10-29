@@ -1,3 +1,4 @@
+
 class Student {
   final int? id;
   final String? admissionNo;
@@ -18,6 +19,7 @@ class Student {
   final int? academicYearId;
   final String? academicYearName;
   final String? status;
+  final bool? transportRequired;
   final String? createdAt;
   final String? updatedAt;
 
@@ -41,6 +43,7 @@ class Student {
     this.academicYearId,
     this.academicYearName,
     this.status,
+    this.transportRequired,
     this.createdAt,
     this.updatedAt,
   });
@@ -66,6 +69,7 @@ class Student {
       academicYearId: json['academicYearId'],
       academicYearName: json['academicYearName'],
       status: json['status'],
+      transportRequired: json['transportRequired'] as bool?,
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
     );

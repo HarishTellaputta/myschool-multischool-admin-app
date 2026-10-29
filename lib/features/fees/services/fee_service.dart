@@ -137,7 +137,6 @@ class FeeService {
       throw Exception(_getErrorMessage(e));
     }
   }
-
   // ============================================================
   // FEE STRUCTURES
   // ============================================================
@@ -451,20 +450,53 @@ class FeeService {
     }
   }
 
+  // ============================================================
+  // APPLY / ENABLE FEE STRUCTURE
+  // ============================================================
 
-// ============================================================
-// APPLY / ENABLE FEE STRUCTURE
-// ============================================================
-
-Future<void> enableFeeStructure(int structureId) async {
-  try {
-    await _dio.put(
-      '/api/v1/fees/structures/$structureId/enable',
-      options: Options(headers: await _headers()),
-    );
-  } on DioException catch (e) {
-    throw Exception(_getErrorMessage(e));
+  Future<void> enableFeeStructure(int structureId) async {
+    try {
+      await _dio.put(
+        '/api/v1/fees/structures/$structureId/enable',
+        options: Options(headers: await _headers()),
+      );
+    } on DioException catch (e) {
+      throw Exception(_getErrorMessage(e));
+    }
   }
-}
 
+  Future<StudentFeeModel> applyFixedDiscount({
+    required int studentFeeId,
+    required double discountAmount,
+    required String discountReason,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/fees/students/fees/$studentFeeId/discount',
+        data: {
+          'discountType': 'FIXED',
+          'discountValue': discountAmount,
+          'discountReason': discountReason.trim(),
+        },
+        options: Options(headers: await _headers()),
+      );
+
+      return StudentFeeModel.fromJson(Map<String, dynamic>.from(response.data));
+    } on DioException catch (e) {
+      throw Exception(_getErrorMessage(e));
+    }
+  }
+
+  Future<List<StudentFeeModel>> getAllStudentFees() async {
+    try {
+      final response = await _dio.get(
+        '/api/v1/fees/students',
+        options: Options(headers: await _headers()),
+      );
+
+      return _parseStudentFees(response.data);
+    } on DioException catch (e) {
+      throw Exception(_getErrorMessage(e));
+    }
+  }
 }

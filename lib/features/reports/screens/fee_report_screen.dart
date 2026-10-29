@@ -26,17 +26,14 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
   static const int _pageSize = 10;
 
-  DateTime _from = DateTime.now().subtract(
-    const Duration(days: 30),
-  );
+  DateTime _from = DateTime.now().subtract(const Duration(days: 30));
 
   DateTime _to = DateTime.now();
 
   bool _loading = false;
   String? _error;
 
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
 
@@ -50,8 +47,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       if (!mounted) return;
 
       setState(() {
-        _searchQuery =
-            _searchController.text.trim().toLowerCase();
+        _searchQuery = _searchController.text.trim().toLowerCase();
       });
     });
 
@@ -77,18 +73,26 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   // =========================================================
   // LOAD DATA
   // =========================================================
+  Future<void> _load({int? page}) async {
+    // Compare only date parts, ignoring time.
+    final fromDate = DateTime(_from.year, _from.month, _from.day);
 
-  Future<void> _load({
-    int? page,
-  }) async {
-    if (_from.isAfter(_to)) {
+    final toDate = DateTime(_to.year, _to.month, _to.day);
+
+    // Validate date range.
+    if (fromDate.isAfter(toDate)) {
+      if (!mounted) return;
+
       setState(() {
         _error = 'From date cannot be after To date.';
+        _loading = false;
       });
       return;
     }
 
     final requestedPage = page ?? _currentPage;
+
+    if (!mounted) return;
 
     setState(() {
       _loading = true;
@@ -97,8 +101,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
     try {
       final result = await _service.getFeeReport(
-        from: _date(_from),
-        to: _date(_to),
+        from: _date(fromDate),
+        to: _date(toDate),
         page: requestedPage,
         size: _pageSize,
       );
@@ -115,19 +119,16 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       if (!mounted) return;
 
       setState(() {
-        _error = e
-            .toString()
-            .replaceFirst('Exception: ', '');
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
-
   // =========================================================
   // CHANGE PAGE
   // =========================================================
@@ -147,11 +148,13 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   // =========================================================
 
   Future<void> _pick(bool isFrom) async {
+    final initialDate = isFrom ? _from : _to;
+
     final result = await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
-      initialDate: isFrom ? _from : _to,
+      initialDate: initialDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -167,7 +170,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       },
     );
 
-    if (result == null) return;
+    if (result == null || !mounted) return;
 
     setState(() {
       if (isFrom) {
@@ -176,12 +179,9 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
         _to = result;
       }
 
-      _currentPage = 0;
+      _error = null;
     });
-
-    await _load(page: 0);
   }
-
   // =========================================================
   // SEARCH
   // =========================================================
@@ -192,20 +192,15 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     }
 
     return _items.where((item) {
-      final student =
-          item.studentName.toLowerCase();
+      final student = item.studentName.toLowerCase();
 
-      final receipt =
-          (item.receiptNumber ?? '').toLowerCase();
+      final receipt = (item.receiptNumber ?? '').toLowerCase();
 
-      final method =
-          (item.paymentMethod ?? '').toLowerCase();
+      final method = (item.paymentMethod ?? '').toLowerCase();
 
-      final remarks =
-          (item.remarks ?? '').toLowerCase();
+      final remarks = (item.remarks ?? '').toLowerCase();
 
-      final date =
-          item.paymentDate.toLowerCase();
+      final date = item.paymentDate.toLowerCase();
 
       return student.contains(_searchQuery) ||
           receipt.contains(_searchQuery) ||
@@ -220,10 +215,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   // =========================================================
 
   double get _totalCollected {
-    return _items.fold(
-      0,
-      (sum, item) => sum + item.amount,
-    );
+    return _items.fold(0, (sum, item) => sum + item.amount);
   }
 
   // =========================================================
@@ -242,17 +234,12 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             final isMobile = constraints.maxWidth < 800;
 
             return SingleChildScrollView(
-              padding: EdgeInsets.all(
-                isMobile ? 16 : 28,
-              ),
+              padding: EdgeInsets.all(isMobile ? 16 : 28),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 1500,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 1500),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildHeader(isMobile),
 
@@ -266,10 +253,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
                       const SizedBox(height: 22),
 
-                      _buildPaymentsSection(
-                        filteredItems,
-                        isMobile,
-                      ),
+                      _buildPaymentsSection(filteredItems, isMobile),
                     ],
                   ),
                 ),
@@ -288,9 +272,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   Widget _buildHeader(bool isMobile) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(
-        isMobile ? 20 : 26,
-      ),
+      padding: EdgeInsets.all(isMobile ? 20 : 26),
       decoration: _cardDecoration(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -300,18 +282,14 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             height: isMobile ? 52 : 62,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color(0xff2563eb),
-                  Color(0xff4f8df7),
-                ],
+                colors: [Color(0xff2563eb), Color(0xff4f8df7)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xff2563eb)
-                      .withOpacity(.20),
+                  color: const Color(0xff2563eb).withOpacity(.20),
                   blurRadius: 16,
                   offset: const Offset(0, 7),
                 ),
@@ -328,8 +306,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Fee Report',
@@ -357,8 +334,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             ),
           ),
 
-          if (!isMobile)
-            _headerRefreshButton(),
+          if (!isMobile) _headerRefreshButton(),
         ],
       ),
     );
@@ -369,20 +345,13 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: _loading
-            ? null
-            : () => _load(page: 0),
+        onTap: _loading ? null : () => _load(page: 0),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: const Color(0xfff8fafc),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: const Color(0xffe2e8f0),
-            ),
+            border: Border.all(color: const Color(0xffe2e8f0)),
           ),
           child: Row(
             children: [
@@ -429,8 +398,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
           _summaryCard(
             title: 'Total Collected',
-            value:
-                '₹${_totalCollected.toStringAsFixed(2)}',
+            value: '₹${_totalCollected.toStringAsFixed(2)}',
             subtitle: 'Current page amount',
             icon: Icons.currency_rupee_rounded,
             iconColor: const Color(0xff059669),
@@ -458,8 +426,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
         Expanded(
           child: _summaryCard(
             title: 'Total Collected',
-            value:
-                '₹${_totalCollected.toStringAsFixed(2)}',
+            value: '₹${_totalCollected.toStringAsFixed(2)}',
             subtitle: 'Current page amount',
             icon: Icons.currency_rupee_rounded,
             iconColor: const Color(0xff059669),
@@ -491,19 +458,14 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
               color: iconBackground,
               borderRadius: BorderRadius.circular(17),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 29,
-            ),
+            child: Icon(icon, color: iconColor, size: 29),
           ),
 
           const SizedBox(width: 16),
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
@@ -559,21 +521,13 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _dateField(
-                        'From Date',
-                        _from,
-                        () => _pick(true),
-                      ),
+                      child: _dateField('From Date', _from, () => _pick(true)),
                     ),
 
                     const SizedBox(width: 10),
 
                     Expanded(
-                      child: _dateField(
-                        'To Date',
-                        _to,
-                        () => _pick(false),
-                      ),
+                      child: _dateField('To Date', _to, () => _pick(false)),
                     ),
                   ],
                 ),
@@ -586,9 +540,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
                 Row(
                   children: [
-                    Expanded(
-                      child: _searchButton(),
-                    ),
+                    Expanded(child: _searchButton()),
 
                     const SizedBox(width: 10),
 
@@ -599,25 +551,15 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             )
           : Row(
               children: [
-                _dateField(
-                  'From Date',
-                  _from,
-                  () => _pick(true),
-                ),
+                _dateField('From Date', _from, () => _pick(true)),
 
                 const SizedBox(width: 12),
 
-                _dateField(
-                  'To Date',
-                  _to,
-                  () => _pick(false),
-                ),
+                _dateField('To Date', _to, () => _pick(false)),
 
                 const SizedBox(width: 18),
 
-                Expanded(
-                  child: _searchField(),
-                ),
+                Expanded(child: _searchField()),
 
                 const SizedBox(width: 12),
 
@@ -631,25 +573,16 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     );
   }
 
-  Widget _dateField(
-    String label,
-    DateTime date,
-    VoidCallback onTap,
-  ) {
+  Widget _dateField(String label, DateTime date, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: const Color(0xfffbfcfe),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xffe2e8f0),
-          ),
+          border: Border.all(color: const Color(0xffe2e8f0)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -663,8 +596,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             const SizedBox(width: 10),
 
             Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
@@ -697,12 +629,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
-        hintText:
-            'Search current page: student, receipt, method...',
-        hintStyle: const TextStyle(
-          color: Color(0xff94a3b8),
-          fontSize: 13,
-        ),
+        hintText: 'Search current page: student, receipt, method...',
+        hintStyle: const TextStyle(color: Color(0xff94a3b8), fontSize: 13),
         prefixIcon: const Icon(
           Icons.search_rounded,
           color: Color(0xff64748b),
@@ -713,37 +641,26 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                 onPressed: () {
                   _searchController.clear();
                 },
-                icon: const Icon(
-                  Icons.close_rounded,
-                  size: 18,
-                ),
+                icon: const Icon(Icons.close_rounded, size: 18),
               )
             : null,
         filled: true,
         fillColor: const Color(0xfffbfcfe),
-        contentPadding:
-            const EdgeInsets.symmetric(
+        contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xffe2e8f0),
-          ),
+          borderSide: const BorderSide(color: Color(0xffe2e8f0)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xffe2e8f0),
-          ),
+          borderSide: const BorderSide(color: Color(0xffe2e8f0)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xff2563eb),
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: Color(0xff2563eb), width: 1.5),
         ),
       ),
     );
@@ -762,23 +679,16 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
                 _load(page: 0);
               },
-        icon: const Icon(
-          Icons.search_rounded,
-          size: 19,
-        ),
+        icon: const Icon(Icons.search_rounded, size: 19),
         label: const Text(
           'Search',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xff2563eb),
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -795,9 +705,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             ? null
             : () {
                 setState(() {
-                  _from = DateTime.now().subtract(
-                    const Duration(days: 30),
-                  );
+                  _from = DateTime.now().subtract(const Duration(days: 30));
 
                   _to = DateTime.now();
 
@@ -810,20 +718,13 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
               },
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xff334155),
-          side: const BorderSide(
-            color: Color(0xffdbe2ea),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 17,
-          ),
+          side: const BorderSide(color: Color(0xffdbe2ea)),
+          padding: const EdgeInsets.symmetric(horizontal: 17),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: const Icon(
-          Icons.refresh_rounded,
-          size: 20,
-        ),
+        child: const Icon(Icons.refresh_rounded, size: 20),
       ),
     );
   }
@@ -832,23 +733,14 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   // PAYMENTS SECTION
   // =========================================================
 
-  Widget _buildPaymentsSection(
-    List<FeeReportModel> items,
-    bool isMobile,
-  ) {
+  Widget _buildPaymentsSection(List<FeeReportModel> items, bool isMobile) {
     return Container(
       width: double.infinity,
       decoration: _cardDecoration(),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          10,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -857,8 +749,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                   height: 42,
                   decoration: BoxDecoration(
                     color: const Color(0xffeaf2ff),
-                    borderRadius:
-                        BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.list_alt_rounded,
@@ -871,8 +762,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Fee Payments',
@@ -898,15 +788,13 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
                 if (!isMobile)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xfff1f5f9),
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       '$_totalElements records',
@@ -922,10 +810,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
             const SizedBox(height: 18),
 
-            const Divider(
-              height: 1,
-              color: Color(0xffeef2f7),
-            ),
+            const Divider(height: 1, color: Color(0xffeef2f7)),
 
             const SizedBox(height: 4),
 
@@ -945,9 +830,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       return const SizedBox(
         height: 430,
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xff2563eb),
-          ),
+          child: CircularProgressIndicator(color: Color(0xff2563eb)),
         ),
       );
     }
@@ -983,125 +866,62 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
               columnSpacing: 34,
               horizontalMargin: 8,
               dividerThickness: .7,
-              headingRowColor:
-                  WidgetStateProperty.all(
-                const Color(0xfff5f8fc),
-              ),
+              headingRowColor: WidgetStateProperty.all(const Color(0xfff5f8fc)),
               columns: const [
-                DataColumn(
-                  label: Text(
-                    '#',
-                    style: _headerStyle,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'DATE',
-                    style: _headerStyle,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'STUDENT',
-                    style: _headerStyle,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'RECEIPT NO.',
-                    style: _headerStyle,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'AMOUNT',
-                    style: _headerStyle,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'METHOD',
-                    style: _headerStyle,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'REMARKS',
-                    style: _headerStyle,
-                  ),
-                ),
+                DataColumn(label: Text('#', style: _headerStyle)),
+                DataColumn(label: Text('DATE', style: _headerStyle)),
+                DataColumn(label: Text('STUDENT', style: _headerStyle)),
+                DataColumn(label: Text('RECEIPT NO.', style: _headerStyle)),
+                DataColumn(label: Text('AMOUNT', style: _headerStyle)),
+                DataColumn(label: Text('METHOD', style: _headerStyle)),
+                DataColumn(label: Text('REMARKS', style: _headerStyle)),
               ],
-              rows: List.generate(
-                items.length,
-                (index) {
-                  final item = items[index];
+              rows: List.generate(items.length, (index) {
+                final item = items[index];
 
-                  final rowNumber =
-                      (_currentPage * _pageSize) +
-                          index +
-                          1;
+                final rowNumber = (_currentPage * _pageSize) + index + 1;
 
-                  return DataRow(
-                    cells: [
-                      DataCell(
-                        _indexBadge(rowNumber),
-                      ),
+                return DataRow(
+                  cells: [
+                    DataCell(_indexBadge(rowNumber)),
 
-                      DataCell(
-                        _dateCell(
-                          item.paymentDate,
+                    DataCell(_dateCell(item.paymentDate)),
+
+                    DataCell(_studentCell(item.studentName)),
+
+                    DataCell(
+                      Text(
+                        item.receiptNumber ?? '-',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xff334155),
                         ),
                       ),
+                    ),
 
-                      DataCell(
-                        _studentCell(
-                          item.studentName,
-                        ),
-                      ),
+                    DataCell(_amountCell(item.amount)),
 
-                      DataCell(
-                        Text(
-                          item.receiptNumber ?? '-',
+                    DataCell(_paymentMethod(item.paymentMethod ?? '-')),
+
+                    DataCell(
+                      SizedBox(
+                        width: 170,
+                        child: Text(
+                          item.remarks ?? '-',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xff334155),
+                            color: Color(0xff64748b),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-
-                      DataCell(
-                        _amountCell(
-                          item.amount,
-                        ),
-                      ),
-
-                      DataCell(
-                        _paymentMethod(
-                          item.paymentMethod ?? '-',
-                        ),
-                      ),
-
-                      DataCell(
-                        SizedBox(
-                          width: 170,
-                          child: Text(
-                            item.remarks ?? '-',
-                            maxLines: 2,
-                            overflow:
-                                TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xff64748b),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                  ],
+                );
+              }),
             ),
           ),
         ),
@@ -1122,22 +942,16 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       return const SizedBox(height: 10);
     }
 
-    final start =
-        (_currentPage * _pageSize) + 1;
+    final start = (_currentPage * _pageSize) + 1;
 
-    final end =
-        ((_currentPage + 1) * _pageSize) >
-                _totalElements
-            ? _totalElements
-            : ((_currentPage + 1) * _pageSize);
+    final end = ((_currentPage + 1) * _pageSize) > _totalElements
+        ? _totalElements
+        : ((_currentPage + 1) * _pageSize);
 
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 10,
-      ),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             '$start–$end of $_totalElements',
@@ -1152,13 +966,9 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             children: [
               _paginationButton(
                 icon: Icons.chevron_left_rounded,
-                enabled:
-                    _currentPage > 0 &&
-                    !_loading,
+                enabled: _currentPage > 0 && !_loading,
                 onTap: () {
-                  _goToPage(
-                    _currentPage - 1,
-                  );
+                  _goToPage(_currentPage - 1);
                 },
               ),
 
@@ -1170,14 +980,9 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
               _paginationButton(
                 icon: Icons.chevron_right_rounded,
-                enabled:
-                    _currentPage <
-                        _totalPages - 1 &&
-                    !_loading,
+                enabled: _currentPage < _totalPages - 1 && !_loading,
                 onTap: () {
-                  _goToPage(
-                    _currentPage + 1,
-                  );
+                  _goToPage(_currentPage + 1);
                 },
               ),
             ],
@@ -1194,14 +999,10 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
     if (total <= 7) {
       for (int i = 0; i < total; i++) {
-        widgets.add(
-          _pageNumberButton(i),
-        );
+        widgets.add(_pageNumberButton(i));
 
         if (i != total - 1) {
-          widgets.add(
-            const SizedBox(width: 5),
-          );
+          widgets.add(const SizedBox(width: 5));
         }
       }
 
@@ -1218,51 +1019,35 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       total - 1,
     };
 
-    final sortedPages = pages
-        .where(
-          (page) =>
-              page >= 0 &&
-              page < total,
-        )
-        .toList()
-      ..sort();
+    final sortedPages =
+        pages.where((page) => page >= 0 && page < total).toList()..sort();
 
     int? previous;
 
     for (final page in sortedPages) {
-      if (previous != null &&
-          page - previous > 1) {
+      if (previous != null && page - previous > 1) {
         widgets.add(
           const Padding(
-            padding:
-                EdgeInsets.symmetric(
-              horizontal: 3,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 3),
             child: Text(
               '...',
               style: TextStyle(
                 color: Color(0xff94a3b8),
-                fontWeight:
-                    FontWeight.w700,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
         );
       }
 
-      widgets.add(
-        _pageNumberButton(page),
-      );
+      widgets.add(_pageNumberButton(page));
 
-      widgets.add(
-        const SizedBox(width: 5),
-      );
+      widgets.add(const SizedBox(width: 5));
 
       previous = page;
     }
 
-    if (widgets.isNotEmpty &&
-        widgets.last is SizedBox) {
+    if (widgets.isNotEmpty && widgets.last is SizedBox) {
       widgets.removeLast();
     }
 
@@ -1270,27 +1055,20 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   }
 
   Widget _pageNumberButton(int page) {
-    final selected =
-        page == _currentPage;
+    final selected = page == _currentPage;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _loading
-            ? null
-            : () => _goToPage(page),
-        borderRadius:
-            BorderRadius.circular(9),
+        onTap: _loading ? null : () => _goToPage(page),
+        borderRadius: BorderRadius.circular(9),
         child: Container(
           width: 36,
           height: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected
-                ? const Color(0xff2563eb)
-                : const Color(0xfff8fafc),
-            borderRadius:
-                BorderRadius.circular(9),
+            color: selected ? const Color(0xff2563eb) : const Color(0xfff8fafc),
+            borderRadius: BorderRadius.circular(9),
             border: Border.all(
               color: selected
                   ? const Color(0xff2563eb)
@@ -1302,9 +1080,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: selected
-                  ? Colors.white
-                  : const Color(0xff334155),
+              color: selected ? Colors.white : const Color(0xff334155),
             ),
           ),
         ),
@@ -1321,28 +1097,20 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius:
-            BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(9),
         child: Container(
           width: 36,
           height: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: enabled
-                ? const Color(0xfff8fafc)
-                : const Color(0xfff1f5f9),
-            borderRadius:
-                BorderRadius.circular(9),
-            border: Border.all(
-              color: const Color(0xffe2e8f0),
-            ),
+            color: enabled ? const Color(0xfff8fafc) : const Color(0xfff1f5f9),
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: const Color(0xffe2e8f0)),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: enabled
-                ? const Color(0xff334155)
-                : const Color(0xffcbd5e1),
+            color: enabled ? const Color(0xff334155) : const Color(0xffcbd5e1),
           ),
         ),
       ),
@@ -1433,10 +1201,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
   Widget _amountCell(double amount) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 11,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xffe9f9f2),
         borderRadius: BorderRadius.circular(8),
@@ -1482,10 +1247,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(8),
@@ -1493,11 +1255,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 15,
-            color: foreground,
-          ),
+          Icon(icon, size: 15, color: foreground),
 
           const SizedBox(width: 6),
 
@@ -1518,24 +1276,19 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
   // EMPTY / ERROR STATES
   // =========================================================
 
-  Widget _emptyState(
-    String title,
-    String subtitle,
-  ) {
+  Widget _emptyState(String title, String subtitle) {
     return SizedBox(
       height: 400,
       child: Center(
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 70,
               height: 70,
               decoration: BoxDecoration(
                 color: const Color(0xffeef2f7),
-                borderRadius:
-                    BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
                 Icons.receipt_long_outlined,
@@ -1560,10 +1313,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xff94a3b8),
-              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xff94a3b8)),
             ),
           ],
         ),
@@ -1576,16 +1326,14 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       height: 400,
       child: Center(
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 65,
               height: 65,
               decoration: BoxDecoration(
                 color: const Color(0xfffff1f2),
-                borderRadius:
-                    BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
                 Icons.error_outline_rounded,
@@ -1608,42 +1356,26 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             const SizedBox(height: 7),
 
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 _error ?? 'Something went wrong.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xff64748b),
-                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xff64748b)),
               ),
             ),
 
             const SizedBox(height: 18),
 
             ElevatedButton.icon(
-              onPressed: _loading
-                  ? null
-                  : () => _load(
-                        page: _currentPage,
-                      ),
-              icon: const Icon(
-                Icons.refresh_rounded,
-                size: 18,
-              ),
+              onPressed: _loading ? null : () => _load(page: _currentPage),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(0xff2563eb),
+                backgroundColor: const Color(0xff2563eb),
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -1668,17 +1400,11 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
     if (parts.length == 1) {
       return parts.first
-          .substring(
-            0,
-            parts.first.length >= 2
-                ? 2
-                : 1,
-          )
+          .substring(0, parts.first.length >= 2 ? 2 : 1)
           .toUpperCase();
     }
 
-    return '${parts.first[0]}${parts.last[0]}'
-        .toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
   Color _avatarColor(String name) {
@@ -1691,12 +1417,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       const Color(0xffcffafe),
     ];
 
-    final index =
-        name.codeUnits.fold(
-              0,
-              (a, b) => a + b,
-            ) %
-            colors.length;
+    final index = name.codeUnits.fold(0, (a, b) => a + b) % colors.length;
 
     return colors[index];
   }
@@ -1705,9 +1426,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     return BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(
-        color: const Color(0xffe7ebf2),
-      ),
+      border: Border.all(color: const Color(0xffe7ebf2)),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withOpacity(.035),

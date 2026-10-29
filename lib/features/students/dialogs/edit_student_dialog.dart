@@ -48,6 +48,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   String selectedGender = 'Male';
   String selectedBloodGroup = 'A+';
   String selectedStatus = 'ACTIVE';
+  bool transportRequired = false;
 
   bool isSaving = false;
   bool isLoadingAcademicData = true;
@@ -82,21 +83,15 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
     final nameParts = _splitName(widget.student.name ?? '');
 
-    firstNameController = TextEditingController(
-      text: nameParts.first,
-    );
+    transportRequired = widget.student.transportRequired ?? false;
 
-    lastNameController = TextEditingController(
-      text: nameParts.second,
-    );
+    firstNameController = TextEditingController(text: nameParts.first);
 
-    emailController = TextEditingController(
-      text: widget.student.email ?? '',
-    );
+    lastNameController = TextEditingController(text: nameParts.second);
 
-    phoneController = TextEditingController(
-      text: widget.student.phone ?? '',
-    );
+    emailController = TextEditingController(text: widget.student.email ?? '');
+
+    phoneController = TextEditingController(text: widget.student.phone ?? '');
 
     dobController = TextEditingController(
       text: _formatDateString(widget.student.dateOfBirth),
@@ -141,8 +136,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
         setState(() {
           isLoadingAcademicData = false;
-          academicDataError =
-              'Login session expired. Please login again.';
+          academicDataError = 'Login session expired. Please login again.';
         });
 
         return;
@@ -159,8 +153,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
       setState(() {
         isLoadingAcademicData = false;
-        academicDataError =
-            'Failed to initialize academic information: $e';
+        academicDataError = 'Failed to initialize academic information: $e';
       });
     }
   }
@@ -248,8 +241,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
       setState(() {
         isLoadingAcademicData = false;
-        academicDataError =
-            'Failed to load academic information: $e';
+        academicDataError = 'Failed to load academic information: $e';
       });
     }
   }
@@ -271,8 +263,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     });
 
     try {
-      final loadedSections =
-          await _sectionService.getSectionsByClassId(classId);
+      final loadedSections = await _sectionService.getSectionsByClassId(
+        classId,
+      );
 
       Section? existingSection;
 
@@ -348,25 +341,16 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     final trimmed = name.trim();
 
     if (trimmed.isEmpty) {
-      return (
-        first: '',
-        second: '',
-      );
+      return (first: '', second: '');
     }
 
     final parts = trimmed.split(RegExp(r'\s+'));
 
     if (parts.length == 1) {
-      return (
-        first: parts.first,
-        second: '',
-      );
+      return (first: parts.first, second: '');
     }
 
-    return (
-      first: parts.first,
-      second: parts.sublist(1).join(' '),
-    );
+    return (first: parts.first, second: parts.sublist(1).join(' '));
   }
 
   // ============================================================
@@ -387,15 +371,11 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     return _dateFormat.format(parsed);
   }
 
-  Future<void> _selectDate({
-    required TextEditingController controller,
-  }) async {
+  Future<void> _selectDate({required TextEditingController controller}) async {
     DateTime initialDate = DateTime.now();
 
     if (controller.text.trim().isNotEmpty) {
-      final parsed = DateTime.tryParse(
-        controller.text.trim(),
-      );
+      final parsed = DateTime.tryParse(controller.text.trim());
 
       if (parsed != null) {
         initialDate = parsed;
@@ -432,11 +412,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   // ============================================================
 
   String _validGender(String? value) {
-    const values = [
-      'Male',
-      'Female',
-      'Other',
-    ];
+    const values = ['Male', 'Female', 'Other'];
 
     if (value != null && values.contains(value)) {
       return value;
@@ -446,16 +422,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   }
 
   String _validBloodGroup(String? value) {
-    const values = [
-      'A+',
-      'A-',
-      'B+',
-      'B-',
-      'AB+',
-      'AB-',
-      'O+',
-      'O-',
-    ];
+    const values = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
     if (value != null && values.contains(value)) {
       return value;
@@ -465,15 +432,11 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   }
 
   String _validStatus(String? value) {
-    const values = [
-      'ACTIVE',
-      'INACTIVE',
-    ];
+    const values = ['ACTIVE', 'INACTIVE'];
 
     final normalized = value?.toUpperCase();
 
-    if (normalized != null &&
-        values.contains(normalized)) {
+    if (normalized != null && values.contains(normalized)) {
       return normalized;
     }
 
@@ -496,20 +459,17 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
       return;
     }
 
-    if (selectedAcademicYear == null ||
-        selectedAcademicYear!.id == null) {
+    if (selectedAcademicYear == null || selectedAcademicYear!.id == null) {
       _showErrorSnackBar('Please select Academic Year');
       return;
     }
 
-    if (selectedClass == null ||
-        selectedClass!.id == null) {
+    if (selectedClass == null || selectedClass!.id == null) {
       _showErrorSnackBar('Please select Class');
       return;
     }
 
-    if (selectedSection == null ||
-        selectedSection!.id == null) {
+    if (selectedSection == null || selectedSection!.id == null) {
       _showErrorSnackBar('Please select Section');
       return;
     }
@@ -540,78 +500,49 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
        */
 
       final data = <String, dynamic>{
-        'admissionNo': _nullable(
-          admissionNoController.text,
-        ),
+        'admissionNo': _nullable(admissionNoController.text),
 
         'name': fullName,
 
-        'email': _nullable(
-          emailController.text,
-        ),
+        'email': _nullable(emailController.text),
 
-        'phone': _nullable(
-          phoneController.text,
-        ),
+        'phone': _nullable(phoneController.text),
 
-        'dateOfBirth': _nullable(
-          dobController.text,
-        ),
+        'dateOfBirth': _nullable(dobController.text),
 
         'gender': selectedGender,
 
         'bloodGroup': selectedBloodGroup,
 
-        'admissionDate': _nullable(
-          admissionDateController.text,
-        ),
+        'admissionDate': _nullable(admissionDateController.text),
 
-        'academicYearId':
-            selectedAcademicYear!.id,
+        'academicYearId': selectedAcademicYear!.id,
 
-        'sectionId':
-            selectedSection!.id,
+        'sectionId': selectedSection!.id,
 
         // Parent is optional.
-        'parentId':
-            selectedParent?.id,
+        'parentId': selectedParent?.id,
 
-        'status':
-            selectedStatus,
+        'status': selectedStatus,
+
+        'transportRequired': transportRequired,
       };
 
-      debugPrint(
-        '========== UPDATE STUDENT ==========',
-      );
+      debugPrint('========== UPDATE STUDENT ==========');
 
-      debugPrint(
-        'Student ID: ${widget.student.id}',
-      );
+      debugPrint('Student ID: ${widget.student.id}');
 
-      debugPrint(
-        'Academic Year ID: ${selectedAcademicYear!.id}',
-      );
+      debugPrint('Academic Year ID: ${selectedAcademicYear!.id}');
 
-      debugPrint(
-        'Class ID: ${selectedClass!.id}',
-      );
+      debugPrint('Class ID: ${selectedClass!.id}');
 
-      debugPrint(
-        'Section ID: ${selectedSection!.id}',
-      );
+      debugPrint('Section ID: ${selectedSection!.id}');
 
-      debugPrint(
-        'Parent ID: ${selectedParent?.id}',
-      );
+      debugPrint('Parent ID: ${selectedParent?.id}');
 
-      debugPrint(
-        '====================================',
-      );
+      debugPrint('====================================');
 
-      await widget.studentService.updateStudent(
-        widget.student.id!,
-        data,
-      );
+      await widget.studentService.updateStudent(widget.student.id!, data);
 
       if (!mounted) return;
 
@@ -635,9 +566,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
               const Expanded(
                 child: Text(
                   'Student updated successfully',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -653,9 +582,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         isSaving = false;
       });
 
-      _showErrorSnackBar(
-        'Failed to update student: ${_cleanErrorMessage(e)}',
-      );
+      _showErrorSnackBar('Failed to update student: ${_cleanErrorMessage(e)}');
     }
   }
 
@@ -691,16 +618,11 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         backgroundColor: const Color(0xFFDC2626),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              color: Colors.white,
-            ),
+            const Icon(Icons.error_outline_rounded, color: Colors.white),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -751,11 +673,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         hint: isPhone
             ? '10-digit mobile number'
             : isEmail
-                ? 'student@example.com'
-                : null,
-      ).copyWith(
-        counterText: isPhone ? '' : null,
-      ),
+            ? 'student@example.com'
+            : null,
+      ).copyWith(counterText: isPhone ? '' : null),
 
       validator: (value) {
         final text = value?.trim() ?? '';
@@ -812,35 +732,29 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
       readOnly: true,
       enabled: !isSaving,
 
-      decoration: _inputDecoration(
-        label: label,
-        icon: icon,
-        required: required,
-      ).copyWith(
-        suffixIcon: Container(
-          margin: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
-            borderRadius: BorderRadius.circular(9),
+      decoration: _inputDecoration(label: label, icon: icon, required: required)
+          .copyWith(
+            suffixIcon: Container(
+              margin: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(
+                Icons.calendar_month_rounded,
+                color: Color(0xFF2563EB),
+                size: 19,
+              ),
+            ),
           ),
-          child: const Icon(
-            Icons.calendar_month_rounded,
-            color: Color(0xFF2563EB),
-            size: 19,
-          ),
-        ),
-      ),
 
       onTap: () {
-        _selectDate(
-          controller: controller,
-        );
+        _selectDate(controller: controller);
       },
 
       validator: required
           ? (value) {
-              if (value == null ||
-                  value.trim().isEmpty) {
+              if (value == null || value.trim().isEmpty) {
                 return '$label is required';
               }
 
@@ -895,14 +809,60 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
       onChanged: isSaving ? null : onChanged,
       validator: required
           ? (value) {
-              if (value == null ||
-                  value.trim().isEmpty) {
+              if (value == null || value.trim().isEmpty) {
                 return '$label is required';
               }
 
               return null;
             }
           : null,
+    );
+  }
+
+  Widget _transportRequiredDropdown() {
+    return DropdownButtonFormField<bool>(
+      initialValue: transportRequired,
+      isExpanded: true,
+      decoration: _inputDecoration(
+        label: 'Transport Required',
+        icon: Icons.directions_bus_rounded,
+        required: true,
+      ),
+      items: const [
+        DropdownMenuItem<bool>(
+          value: true,
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF16A34A),
+                size: 20,
+              ),
+              SizedBox(width: 10),
+              Text('Yes'),
+            ],
+          ),
+        ),
+        DropdownMenuItem<bool>(
+          value: false,
+          child: Row(
+            children: [
+              Icon(Icons.cancel_rounded, color: Color(0xFF64748B), size: 20),
+              SizedBox(width: 10),
+              Text('No'),
+            ],
+          ),
+        ),
+      ],
+      onChanged: isSaving
+          ? null
+          : (value) {
+              if (value != null) {
+                setState(() {
+                  transportRequired = value;
+                });
+              }
+            },
     );
   }
 
@@ -967,17 +927,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             bottomLeft: Radius.circular(14),
           ),
         ),
-        child: Icon(
-          icon,
-          color: Color(0xFF2563EB),
-          size: 20,
-        ),
+        child: Icon(icon, color: Color(0xFF2563EB), size: 20),
       ),
 
-      prefixIconConstraints: const BoxConstraints(
-        minWidth: 52,
-        minHeight: 52,
-      ),
+      prefixIconConstraints: const BoxConstraints(minWidth: 52, minHeight: 52),
 
       labelStyle: TextStyle(
         color: Colors.grey.shade600,
@@ -985,57 +938,36 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         fontWeight: FontWeight.w500,
       ),
 
-      hintStyle: TextStyle(
-        color: Colors.grey.shade400,
-        fontSize: 13,
-      ),
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
 
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFE5E7EB),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
       ),
 
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFE5E7EB),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
       ),
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-          color: primaryColor,
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: primaryColor, width: 1.5),
       ),
 
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFEF4444),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFEF4444)),
       ),
 
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFEF4444),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
       ),
 
-      errorStyle: const TextStyle(
-        fontSize: 11.5,
-        fontWeight: FontWeight.w500,
-      ),
+      errorStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
     );
   }
 
@@ -1060,17 +992,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
           child: Text(
             year.name ?? 'Academic Year',
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         );
       }).toList(),
 
-      onChanged: isSaving
-          ? null
-          : _onAcademicYearChanged,
+      onChanged: isSaving ? null : _onAcademicYearChanged,
 
       validator: (value) {
         if (value == null) {
@@ -1109,17 +1036,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
           child: Text(
             displayName,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         );
       }).toList(),
 
-      onChanged: isSaving
-          ? null
-          : _onClassChanged,
+      onChanged: isSaving ? null : _onClassChanged,
 
       validator: (value) {
         if (value == null) {
@@ -1148,17 +1070,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 10),
             Text(
               'Loading sections...',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -1181,18 +1098,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
           child: Text(
             section.name,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         );
       }).toList(),
 
-      onChanged:
-          isSaving || selectedClass == null
-              ? null
-              : _onSectionChanged,
+      onChanged: isSaving || selectedClass == null ? null : _onSectionChanged,
 
       validator: (value) {
         if (value == null) {
@@ -1233,47 +1144,40 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
               SizedBox(width: 9),
               Text(
                 'No Parent',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ],
           ),
         ),
 
-        ...parents.map(
-          (parent) {
-            return DropdownMenuItem<Parent?>(
-              value: parent,
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.person_outline_rounded,
-                    size: 18,
-                    color: Color(0xFF2563EB),
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      parent.displayName,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+        ...parents.map((parent) {
+          return DropdownMenuItem<Parent?>(
+            value: parent,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.person_outline_rounded,
+                  size: 18,
+                  color: Color(0xFF2563EB),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    parent.displayName,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
 
-      onChanged: isSaving
-          ? null
-          : _onParentChanged,
+      onChanged: isSaving ? null : _onParentChanged,
     );
   }
 
@@ -1289,26 +1193,19 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: const Color(0xFFE5E7EB),
-          ),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: const Row(
           children: [
             SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 12),
             Text(
               'Loading academic information...',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -1322,17 +1219,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
         decoration: BoxDecoration(
           color: const Color(0xFFFEF2F2),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: const Color(0xFFFECACA),
-          ),
+          border: Border.all(color: const Color(0xFFFECACA)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              color: Color(0xFFDC2626),
-            ),
+            const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626)),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -1357,9 +1249,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                     },
               child: const Text(
                 'Retry',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -1375,8 +1265,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
         LayoutBuilder(
           builder: (context, constraints) {
-            final twoColumns =
-                constraints.maxWidth >= 560;
+            final twoColumns = constraints.maxWidth >= 560;
 
             if (!twoColumns) {
               return Column(
@@ -1390,13 +1279,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
             return Row(
               children: [
-                Expanded(
-                  child: _classDropdown(),
-                ),
+                Expanded(child: _classDropdown()),
                 const SizedBox(width: 14),
-                Expanded(
-                  child: _sectionDropdown(),
-                ),
+                Expanded(child: _sectionDropdown()),
               ],
             );
           },
@@ -1413,22 +1298,14 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   // SECTION TITLE
   // ============================================================
 
-  Widget _sectionTitle(
-    String title,
-    IconData icon,
-  ) {
+  Widget _sectionTitle(String title, IconData icon) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 13,
-        vertical: 11,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
         children: [
@@ -1439,11 +1316,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
               color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: const Color(0xFF2563EB),
-            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF2563EB)),
           ),
           const SizedBox(width: 10),
           Text(
@@ -1465,26 +1338,19 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth =
-        MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     final dialogWidth = screenWidth > 1000
         ? 800.0
         : screenWidth > 700
-            ? 650.0
-            : screenWidth * 0.94;
+        ? 650.0
+        : screenWidth * 0.94;
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 20,
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 800,
-          maxHeight: 900,
-        ),
+        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 900),
         child: Container(
           width: dialogWidth,
           decoration: BoxDecoration(
@@ -1508,15 +1374,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(
-                      24,
-                      22,
-                      24,
-                      10,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 22, 24, 10),
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildInfoBanner(),
 
@@ -1531,29 +1391,23 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         const SizedBox(height: 14),
 
                         LayoutBuilder(
-                          builder:
-                              (context, constraints) {
-                            final twoColumns =
-                                constraints.maxWidth >= 560;
+                          builder: (context, constraints) {
+                            final twoColumns = constraints.maxWidth >= 560;
 
                             if (!twoColumns) {
                               return Column(
                                 children: [
                                   _textField(
-                                    controller:
-                                        firstNameController,
+                                    controller: firstNameController,
                                     label: 'First Name',
-                                    icon:
-                                        Icons.person_outline,
+                                    icon: Icons.person_outline,
                                     required: true,
                                   ),
                                   const SizedBox(height: 14),
                                   _textField(
-                                    controller:
-                                        lastNameController,
+                                    controller: lastNameController,
                                     label: 'Last Name',
-                                    icon:
-                                        Icons.person_outline,
+                                    icon: Icons.person_outline,
                                   ),
                                 ],
                               );
@@ -1563,22 +1417,18 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               children: [
                                 Expanded(
                                   child: _textField(
-                                    controller:
-                                        firstNameController,
+                                    controller: firstNameController,
                                     label: 'First Name',
-                                    icon:
-                                        Icons.person_outline,
+                                    icon: Icons.person_outline,
                                     required: true,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: _textField(
-                                    controller:
-                                        lastNameController,
+                                    controller: lastNameController,
                                     label: 'Last Name',
-                                    icon:
-                                        Icons.person_outline,
+                                    icon: Icons.person_outline,
                                   ),
                                 ),
                               ],
@@ -1589,40 +1439,28 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         const SizedBox(height: 14),
 
                         LayoutBuilder(
-                          builder:
-                              (context, constraints) {
-                            final twoColumns =
-                                constraints.maxWidth >= 560;
+                          builder: (context, constraints) {
+                            final twoColumns = constraints.maxWidth >= 560;
 
                             if (!twoColumns) {
                               return Column(
                                 children: [
                                   _dateField(
-                                    controller:
-                                        dobController,
-                                    label:
-                                        'Date of Birth',
-                                    icon:
-                                        Icons.cake_outlined,
+                                    controller: dobController,
+                                    label: 'Date of Birth',
+                                    icon: Icons.cake_outlined,
                                     required: true,
                                   ),
                                   const SizedBox(height: 14),
                                   _dropdownField(
                                     label: 'Gender',
-                                    icon:
-                                        Icons.wc_outlined,
-                                    value:
-                                        selectedGender,
-                                    items: const [
-                                      'Male',
-                                      'Female',
-                                      'Other',
-                                    ],
+                                    icon: Icons.wc_outlined,
+                                    value: selectedGender,
+                                    items: const ['Male', 'Female', 'Other'],
                                     onChanged: (value) {
                                       if (value != null) {
                                         setState(() {
-                                          selectedGender =
-                                              value;
+                                          selectedGender = value;
                                         });
                                       }
                                     },
@@ -1635,12 +1473,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               children: [
                                 Expanded(
                                   child: _dateField(
-                                    controller:
-                                        dobController,
-                                    label:
-                                        'Date of Birth',
-                                    icon:
-                                        Icons.cake_outlined,
+                                    controller: dobController,
+                                    label: 'Date of Birth',
+                                    icon: Icons.cake_outlined,
                                     required: true,
                                   ),
                                 ),
@@ -1648,20 +1483,13 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                 Expanded(
                                   child: _dropdownField(
                                     label: 'Gender',
-                                    icon:
-                                        Icons.wc_outlined,
-                                    value:
-                                        selectedGender,
-                                    items: const [
-                                      'Male',
-                                      'Female',
-                                      'Other',
-                                    ],
+                                    icon: Icons.wc_outlined,
+                                    value: selectedGender,
+                                    items: const ['Male', 'Female', 'Other'],
                                     onChanged: (value) {
                                       if (value != null) {
                                         setState(() {
-                                          selectedGender =
-                                              value;
+                                          selectedGender = value;
                                         });
                                       }
                                     },
@@ -1675,21 +1503,16 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         const SizedBox(height: 14),
 
                         LayoutBuilder(
-                          builder:
-                              (context, constraints) {
-                            final twoColumns =
-                                constraints.maxWidth >= 560;
+                          builder: (context, constraints) {
+                            final twoColumns = constraints.maxWidth >= 560;
 
                             if (!twoColumns) {
                               return Column(
                                 children: [
                                   _dropdownField(
-                                    label:
-                                        'Blood Group',
-                                    icon:
-                                        Icons.bloodtype_outlined,
-                                    value:
-                                        selectedBloodGroup,
+                                    label: 'Blood Group',
+                                    icon: Icons.bloodtype_outlined,
+                                    value: selectedBloodGroup,
                                     items: const [
                                       'A+',
                                       'A-',
@@ -1703,20 +1526,16 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                     onChanged: (value) {
                                       if (value != null) {
                                         setState(() {
-                                          selectedBloodGroup =
-                                              value;
+                                          selectedBloodGroup = value;
                                         });
                                       }
                                     },
                                   ),
                                   const SizedBox(height: 14),
                                   _textField(
-                                    controller:
-                                        admissionNoController,
-                                    label:
-                                        'Admission No',
-                                    icon:
-                                        Icons.badge_outlined,
+                                    controller: admissionNoController,
+                                    label: 'Admission No',
+                                    icon: Icons.badge_outlined,
                                     required: true,
                                   ),
                                 ],
@@ -1727,12 +1546,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               children: [
                                 Expanded(
                                   child: _dropdownField(
-                                    label:
-                                        'Blood Group',
-                                    icon:
-                                        Icons.bloodtype_outlined,
-                                    value:
-                                        selectedBloodGroup,
+                                    label: 'Blood Group',
+                                    icon: Icons.bloodtype_outlined,
+                                    value: selectedBloodGroup,
                                     items: const [
                                       'A+',
                                       'A-',
@@ -1746,8 +1562,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                     onChanged: (value) {
                                       if (value != null) {
                                         setState(() {
-                                          selectedBloodGroup =
-                                              value;
+                                          selectedBloodGroup = value;
                                         });
                                       }
                                     },
@@ -1756,12 +1571,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: _textField(
-                                    controller:
-                                        admissionNoController,
-                                    label:
-                                        'Admission No',
-                                    icon:
-                                        Icons.badge_outlined,
+                                    controller: admissionNoController,
+                                    label: 'Admission No',
+                                    icon: Icons.badge_outlined,
                                     required: true,
                                   ),
                                 ),
@@ -1781,36 +1593,26 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         const SizedBox(height: 14),
 
                         LayoutBuilder(
-                          builder:
-                              (context, constraints) {
-                            final twoColumns =
-                                constraints.maxWidth >= 560;
+                          builder: (context, constraints) {
+                            final twoColumns = constraints.maxWidth >= 560;
 
                             if (!twoColumns) {
                               return Column(
                                 children: [
                                   _textField(
-                                    controller:
-                                        phoneController,
-                                    label:
-                                        'Mobile Number',
-                                    icon:
-                                        Icons.phone_rounded,
-                                    keyboardType:
-                                        TextInputType.phone,
+                                    controller: phoneController,
+                                    label: 'Mobile Number',
+                                    icon: Icons.phone_rounded,
+                                    keyboardType: TextInputType.phone,
                                     required: true,
                                     isPhone: true,
                                   ),
                                   const SizedBox(height: 14),
                                   _textField(
-                                    controller:
-                                        emailController,
+                                    controller: emailController,
                                     label: 'Email',
-                                    icon:
-                                        Icons.email_outlined,
-                                    keyboardType:
-                                        TextInputType
-                                            .emailAddress,
+                                    icon: Icons.email_outlined,
+                                    keyboardType: TextInputType.emailAddress,
                                     required: true,
                                     isEmail: true,
                                   ),
@@ -1822,14 +1624,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               children: [
                                 Expanded(
                                   child: _textField(
-                                    controller:
-                                        phoneController,
-                                    label:
-                                        'Mobile Number',
-                                    icon:
-                                        Icons.phone_rounded,
-                                    keyboardType:
-                                        TextInputType.phone,
+                                    controller: phoneController,
+                                    label: 'Mobile Number',
+                                    icon: Icons.phone_rounded,
+                                    keyboardType: TextInputType.phone,
                                     required: true,
                                     isPhone: true,
                                   ),
@@ -1837,14 +1635,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: _textField(
-                                    controller:
-                                        emailController,
+                                    controller: emailController,
                                     label: 'Email',
-                                    icon:
-                                        Icons.email_outlined,
-                                    keyboardType:
-                                        TextInputType
-                                            .emailAddress,
+                                    icon: Icons.email_outlined,
+                                    keyboardType: TextInputType.emailAddress,
                                     required: true,
                                     isEmail: true,
                                   ),
@@ -1869,11 +1663,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         const SizedBox(height: 14),
 
                         _dateField(
-                          controller:
-                              admissionDateController,
+                          controller: admissionDateController,
                           label: 'Admission Date',
-                          icon:
-                              Icons.event_outlined,
+                          icon: Icons.event_outlined,
                           required: true,
                         ),
 
@@ -1881,13 +1673,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
                         _dropdownField(
                           label: 'Status',
-                          icon:
-                              Icons.toggle_on_outlined,
+                          icon: Icons.toggle_on_outlined,
                           value: selectedStatus,
-                          items: const [
-                            'ACTIVE',
-                            'INACTIVE',
-                          ],
+                          items: const ['ACTIVE', 'INACTIVE'],
                           onChanged: (value) {
                             if (value != null) {
                               setState(() {
@@ -1898,44 +1686,35 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         ),
 
                         const SizedBox(height: 14),
+                        _transportRequiredDropdown(),
+
+                        const SizedBox(height: 14),
 
                         // PARENT INFO
                         if (selectedParent != null)
                           Container(
                             width: double.infinity,
-                            padding:
-                                const EdgeInsets.all(14),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color:
-                                  const Color(0xFFF0FDF4),
-                              borderRadius:
-                                  BorderRadius.circular(14),
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color:
-                                    const Color(0xFFBBF7D0),
+                                color: const Color(0xFFBBF7D0),
                               ),
                             ),
                             child: Row(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
                                   width: 34,
                                   height: 34,
-                                  decoration:
-                                      BoxDecoration(
-                                    color:
-                                        const Color(0xFFDCFCE7),
-                                    borderRadius:
-                                        BorderRadius.circular(
-                                      10,
-                                    ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(
-                                    Icons
-                                        .family_restroom_rounded,
-                                    color:
-                                        Color(0xFF16A34A),
+                                    Icons.family_restroom_rounded,
+                                    color: Color(0xFF16A34A),
                                     size: 19,
                                   ),
                                 ),
@@ -1943,30 +1722,23 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment
-                                            .start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Parent Linked',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          fontWeight:
-                                              FontWeight.w800,
-                                          color:
-                                              Color(0xFF166534),
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF166534),
                                         ),
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
-                                        selectedParent!
-                                            .displayName,
-                                        style:
-                                            const TextStyle(
+                                        selectedParent!.displayName,
+                                        style: const TextStyle(
                                           fontSize: 13,
-                                          color:
-                                              Color(0xFF15803D),
-                                          fontWeight:
-                                              FontWeight.w600,
+                                          color: Color(0xFF15803D),
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
@@ -1998,18 +1770,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        24,
-        22,
-        18,
-        22,
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 22, 18, 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF2563EB),
-            Color(0xFF1D4ED8),
-          ],
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -2022,9 +1786,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.16),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.22),
-              ),
+              border: Border.all(color: Colors.white.withOpacity(0.22)),
             ),
             child: const Icon(
               Icons.edit_note_rounded,
@@ -2037,8 +1799,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
           const Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Edit Student',
@@ -2067,10 +1828,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                 Navigator.of(context).pop();
               },
               tooltip: 'Close',
-              icon: const Icon(
-                Icons.close_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.close_rounded, color: Colors.white),
             ),
         ],
       ),
@@ -2088,13 +1846,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
       decoration: BoxDecoration(
         color: const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: const Color(0xFFBFDBFE),
-        ),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.info_outline_rounded,
@@ -2125,19 +1880,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        24,
-        14,
-        24,
-        20,
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE5E7EB),
-          ),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
       ),
       child: Row(
         children: [
@@ -2150,22 +1896,15 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                     },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
-                foregroundColor:
-                    const Color(0xFF374151),
-                side: const BorderSide(
-                  color: Color(0xFFD1D5DB),
-                ),
+                foregroundColor: const Color(0xFF374151),
+                side: const BorderSide(color: Color(0xFFD1D5DB)),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(13),
                 ),
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -2174,36 +1913,28 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
           Expanded(
             child: ElevatedButton(
-              onPressed:
-                  isSaving ? null : _updateStudent,
+              onPressed: isSaving ? null : _updateStudent,
               style: ElevatedButton.styleFrom(
-                minimumSize:
-                    const Size.fromHeight(50),
-                backgroundColor:
-                    const Color(0xFF2563EB),
-                disabledBackgroundColor:
-                    const Color(0xFF93C5FD),
+                minimumSize: const Size.fromHeight(50),
+                backgroundColor: const Color(0xFF2563EB),
+                disabledBackgroundColor: const Color(0xFF93C5FD),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(13),
                 ),
               ),
               child: AnimatedSwitcher(
-                duration:
-                    const Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 200),
                 child: isSaving
                     ? const Row(
                         key: ValueKey('updating'),
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
                             width: 18,
                             height: 18,
-                            child:
-                                CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               strokeWidth: 2.2,
                               color: Colors.white,
                             ),
@@ -2213,28 +1944,22 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             'Updating...',
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight:
-                                  FontWeight.w700,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       )
                     : const Row(
                         key: ValueKey('update'),
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.save_rounded,
-                            size: 19,
-                          ),
+                          Icon(Icons.save_rounded, size: 19),
                           SizedBox(width: 8),
                           Text(
                             'Update Student',
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight:
-                                  FontWeight.w700,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],

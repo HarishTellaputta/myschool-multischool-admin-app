@@ -65,7 +65,7 @@ extension AdminDashboardHeaderUI on _AdminDashboardScreenState {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'SMARTKIDS • ADMIN',
+                      'MySchool • ADMIN',
                       style: TextStyle(
                         color: Color(0xFFBFDBFE),
                         fontSize: 12,

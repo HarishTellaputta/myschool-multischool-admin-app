@@ -399,15 +399,11 @@ class _ExamScheduleExcelScreenState extends State<ExamScheduleExcelScreen> {
             section.name,
             subject.subjectName,
             teacherName,
-
-            // Editable fields - intentionally blank.
-            '',
-            '',
-            '',
-            '',
-            '',
-
-            // Default status.
+            '28-10-2026', // Dummy Exam Date
+            '09:30', // Dummy Start Time
+            120, // Dummy Duration (minutes)
+            100, // Dummy Max Marks
+            '101', // Dummy Room Number
             'SCHEDULED',
           ];
 
