@@ -574,15 +574,14 @@ class _ExamResultExcelScreenState extends State<ExamResultExcelScreen> {
           // Roll Number
           ex.TextCellValue(student.rollNumber ?? ''),
 
-          // Marks Obtained
-          // Teacher enters marks here.
-          ex.TextCellValue(''),
+          // Marks Obtained - Dummy example
+          ex.IntCellValue(75),
 
-          // Remarks
-          ex.TextCellValue(''),
+          // Remarks - Dummy example
+          ex.TextCellValue('Good'),
 
-          // Status
-          ex.TextCellValue(''),
+          // Status - Dummy example
+          ex.TextCellValue('COMPLETED'),
         ]);
       }
 

@@ -58,9 +58,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
 
       setState(() {
         _examinations = data
-            .where(
-              (exam) => exam.status.toUpperCase() == 'PUBLISHED',
-            )
+            .where((exam) => exam.status.toUpperCase() == 'PUBLISHED')
             .toList();
 
         _loadingExaminations = false;
@@ -102,7 +100,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
               badge: '5 Modules',
               children: [
                 const AcademicYearExcelCard(),
-               // SchoolExcelCard(),
+                // SchoolExcelCard(),
                 const ClassesExcelCard(),
                 const SectionsExcelCard(),
                 const SubjectsExcelCard(),
@@ -193,15 +191,15 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
               iconBackground: const Color(0xFFFDF2F8),
               badge: '2 Modules',
               children: [
-                _buildExcelCard(
-                  icon: Icons.quiz_rounded,
-                  title: 'MCQ Questions',
-                  subtitle: 'Download MCQ question import template',
-                  buttonText: 'Generate Excel',
-                  iconColor: const Color(0xFFDB2777),
-                  iconBackground: const Color(0xFFFDF2F8),
-                  onGenerate: _generateMcqQuestionsExcel,
-                ),
+                // _buildExcelCard(
+                //   icon: Icons.quiz_rounded,
+                //   title: 'MCQ Questions',
+                //   subtitle: 'Download MCQ question import template',
+                //   buttonText: 'Generate Excel',
+                //   iconColor: const Color(0xFFDB2777),
+                //   iconBackground: const Color(0xFFFDF2F8),
+                //   onGenerate: _generateMcqQuestionsExcel,
+                // ),
                 _buildExcelCard(
                   icon: Icons.people_alt_rounded,
                   title: 'Student Data',
@@ -230,9 +228,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
@@ -250,10 +246,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF2563EB),
-                  Color(0xFF4F46E5),
-                ],
+                colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
               ),
               borderRadius: BorderRadius.circular(17),
               boxShadow: const [
@@ -324,25 +317,16 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 13,
-        vertical: 9,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 7),
           Text(
             text,
@@ -376,8 +360,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
           columns = 1;
         }
 
-        final itemWidth =
-            (width - ((columns - 1) * 14)) / columns;
+        final itemWidth = (width - ((columns - 1) * 14)) / columns;
 
         return Wrap(
           spacing: 14,
@@ -446,9 +429,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x05000000),
@@ -466,11 +447,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
               color: background,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 21,
-            ),
+            child: Icon(icon, color: iconColor, size: 21),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -536,9 +513,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -559,11 +534,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 21,
-                ),
+                child: Icon(icon, color: iconColor, size: 21),
               ),
 
               const SizedBox(width: 12),
@@ -627,19 +598,13 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
                 columns = 2;
               }
 
-              final itemWidth =
-                  (width - ((columns - 1) * 14)) / columns;
+              final itemWidth = (width - ((columns - 1) * 14)) / columns;
 
               return Wrap(
                 spacing: 14,
                 runSpacing: 14,
                 children: children
-                    .map(
-                      (child) => SizedBox(
-                        width: itemWidth,
-                        child: child,
-                      ),
-                    )
+                    .map((child) => SizedBox(width: itemWidth, child: child))
                     .toList(),
               );
             },
@@ -667,9 +632,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFAFBFC),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -683,11 +646,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 21,
-                ),
+                child: Icon(icon, color: iconColor, size: 21),
               ),
 
               const SizedBox(width: 11),
@@ -750,9 +709,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
                 backgroundColor: iconColor,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 11,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 11),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(9),
                 ),
@@ -841,9 +798,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
       final bytes = excel.encode();
 
       if (bytes == null) {
-        throw Exception(
-          'Failed to generate MCQ Questions Excel.',
-        );
+        throw Exception('Failed to generate MCQ Questions Excel.');
       }
 
       await FileSaver.instance.saveFile(
@@ -853,13 +808,9 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
         mimeType: MimeType.microsoftExcel,
       );
 
-      _showSuccess(
-        'MCQ Questions Excel generated successfully',
-      );
+      _showSuccess('MCQ Questions Excel generated successfully');
     } catch (e) {
-      _showError(
-        'Failed to generate MCQ Questions Excel: $e',
-      );
+      _showError('Failed to generate MCQ Questions Excel: $e');
     }
   }
 
@@ -928,7 +879,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
         ex.TextCellValue('rajeshreddy41@example.com'),
         ex.TextCellValue('Father'),
         ex.TextCellValue('Khammam'),
-        ex.TextCellValue('TRUE'),
+        ex.TextCellValue('YES'),
       ]);
 
       sheet.appendRow([
@@ -953,15 +904,13 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
         ex.TextCellValue('sureshreddy42@example.com'),
         ex.TextCellValue('Father'),
         ex.TextCellValue('Khammam'),
-        ex.TextCellValue('FALSE'),
+        ex.TextCellValue('NO'),
       ]);
 
       final bytes = excel.encode();
 
       if (bytes == null) {
-        throw Exception(
-          'Failed to generate Student Data Excel.',
-        );
+        throw Exception('Failed to generate Student Data Excel.');
       }
 
       await FileSaver.instance.saveFile(
@@ -971,13 +920,9 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
         mimeType: MimeType.microsoftExcel,
       );
 
-      _showSuccess(
-        'Student Data Excel template generated successfully',
-      );
+      _showSuccess('Student Data Excel template generated successfully');
     } catch (e) {
-      _showError(
-        'Failed to generate Student Data Excel: $e',
-      );
+      _showError('Failed to generate Student Data Excel: $e');
     }
   }
 
@@ -999,30 +944,30 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
 
       final sheet = excel['Examination'];
 
+      // Column headers
       sheet.appendRow([
         ex.TextCellValue('name'),
         ex.TextCellValue('academicYear'),
-        ex.TextCellValue('startDate'),
-        ex.TextCellValue('endDate'),
         ex.TextCellValue('description'),
+        ex.TextCellValue('examType'),
+        ex.TextCellValue('year'),
         ex.TextCellValue('status'),
       ]);
 
+      // Sample examination row
       sheet.appendRow([
-        ex.TextCellValue('Annual Examination'),
+        ex.TextCellValue('MID Examination'),
         ex.TextCellValue('2026-2027'),
-        ex.TextCellValue('2027-03-01'),
-        ex.TextCellValue('2027-03-20'),
-        ex.TextCellValue('Annual Examination'),
+        ex.TextCellValue('First Unit Examination'),
+        ex.TextCellValue('MID'),
+        ex.IntCellValue(2027),
         ex.TextCellValue('DRAFT'),
       ]);
 
       final bytes = excel.encode();
 
       if (bytes == null) {
-        throw Exception(
-          'Failed to generate Examination Excel.',
-        );
+        throw Exception('Failed to generate Examination Excel.');
       }
 
       await FileSaver.instance.saveFile(
@@ -1032,13 +977,9 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
         mimeType: MimeType.microsoftExcel,
       );
 
-      _showSuccess(
-        'Examination Excel generated successfully',
-      );
+      _showSuccess('Examination Excel generated successfully');
     } catch (e) {
-      _showError(
-        'Failed to generate Examination Excel: $e',
-      );
+      _showError('Failed to generate Examination Excel: $e');
     }
   }
 
@@ -1046,100 +987,64 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
   // GRADE RULES
   // ============================================================
 
-  Future<void> _generateGradeRulesExcel() async {
-    try {
-      final excel = ex.Excel.createExcel();
+Future<void> _generateGradeRulesExcel() async {
+  try {
+    final excel = ex.Excel.createExcel();
 
-      final defaultSheet = excel.getDefaultSheet();
+    final defaultSheet = excel.getDefaultSheet();
 
-      if (defaultSheet == null) {
-        throw Exception('Unable to create Excel sheet.');
-      }
-
-      excel.rename(defaultSheet, 'Grade Rules');
-
-      final sheet = excel['Grade Rules'];
-
-      sheet.appendRow([
-        ex.TextCellValue('grade'),
-        ex.TextCellValue('minPercentage'),
-        ex.TextCellValue('maxPercentage'),
-        ex.TextCellValue('description'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('A+'),
-        ex.DoubleCellValue(90),
-        ex.DoubleCellValue(100),
-        ex.TextCellValue('Outstanding'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('A'),
-        ex.DoubleCellValue(80),
-        ex.DoubleCellValue(89.99),
-        ex.TextCellValue('Excellent'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('B+'),
-        ex.DoubleCellValue(70),
-        ex.DoubleCellValue(79.99),
-        ex.TextCellValue('Very Good'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('B'),
-        ex.DoubleCellValue(60),
-        ex.DoubleCellValue(69.99),
-        ex.TextCellValue('Good'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('C'),
-        ex.DoubleCellValue(50),
-        ex.DoubleCellValue(59.99),
-        ex.TextCellValue('Average'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('D'),
-        ex.DoubleCellValue(35),
-        ex.DoubleCellValue(49.99),
-        ex.TextCellValue('Pass'),
-      ]);
-
-      sheet.appendRow([
-        ex.TextCellValue('F'),
-        ex.DoubleCellValue(0),
-        ex.DoubleCellValue(34.99),
-        ex.TextCellValue('Fail'),
-      ]);
-
-      final bytes = excel.encode();
-
-      if (bytes == null) {
-        throw Exception(
-          'Failed to generate Grade Rules Excel.',
-        );
-      }
-
-      await FileSaver.instance.saveFile(
-        name: 'grade_rules_template',
-        bytes: Uint8List.fromList(bytes),
-        fileExtension: 'xlsx',
-        mimeType: MimeType.microsoftExcel,
-      );
-
-      _showSuccess(
-        'Grade Rules Excel generated successfully',
-      );
-    } catch (e) {
-      _showError(
-        'Failed to generate Grade Rules Excel: $e',
-      );
+    if (defaultSheet == null) {
+      throw Exception('Unable to create Excel sheet.');
     }
+
+    excel.rename(defaultSheet, 'Grade Rules');
+
+    final sheet = excel['Grade Rules'];
+
+    // Header row
+    sheet.appendRow([
+      ex.TextCellValue('grade'),
+      ex.TextCellValue('minPercentage'),
+      ex.TextCellValue('maxPercentage'),
+    ]);
+
+    // Grade rules data
+    final gradeRules = [
+      ['A+', 90.00, 100.00],
+      ['A', 80.00, 89.99],
+      ['B+', 70.00, 79.99],
+      ['B', 60.00, 69.99],
+      ['C', 50.00, 59.99],
+      ['D', 35.00, 49.99],
+      ['F', 0.00, 34.99],
+    ];
+
+    for (final rule in gradeRules) {
+      sheet.appendRow([
+        ex.TextCellValue(rule[0] as String),
+        ex.DoubleCellValue(rule[1] as double),
+        ex.DoubleCellValue(rule[2] as double),
+      ]);
+    }
+
+    final bytes = excel.encode();
+
+    if (bytes == null) {
+      throw Exception('Failed to generate Grade Rules Excel.');
+    }
+
+    await FileSaver.instance.saveFile(
+      name: 'grade_rules_template',
+      bytes: Uint8List.fromList(bytes),
+      fileExtension: 'xlsx',
+      mimeType: MimeType.microsoftExcel,
+    );
+
+    _showSuccess('Grade Rules Excel generated successfully');
+  } catch (e) {
+    _showError('Failed to generate Grade Rules Excel: $e');
   }
+}
 
   // ============================================================
   // TIMETABLE
@@ -1239,9 +1144,7 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
       final bytes = excel.encode();
 
       if (bytes == null) {
-        throw Exception(
-          'Failed to generate Timetable Excel.',
-        );
+        throw Exception('Failed to generate Timetable Excel.');
       }
 
       await FileSaver.instance.saveFile(
@@ -1251,13 +1154,9 @@ class _ExcelReportsScreenState extends State<ExcelReportsScreen> {
         mimeType: MimeType.microsoftExcel,
       );
 
-      _showSuccess(
-        'Timetable Excel template generated successfully',
-      );
+      _showSuccess('Timetable Excel template generated successfully');
     } catch (e) {
-      _showError(
-        'Failed to generate Timetable Excel: $e',
-      );
+      _showError('Failed to generate Timetable Excel: $e');
     }
   }
 

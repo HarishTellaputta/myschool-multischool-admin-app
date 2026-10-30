@@ -606,9 +606,39 @@ class _ExamsScreenState extends State<ExamsScreen> {
       text: exam?.year.toString() ?? DateTime.now().year.toString(),
     );
 
-    String examType = exam?.examType ?? 'UNIT_TEST';
-    String status = exam?.status ?? 'DRAFT';
+    const examTypeDefaults = <String>[
+      'UNIT_TEST',
+      'PERIODIC_TEST',
+      'MID',
+      'MID_TERM',
+      'ANNUAL',
+      'TERMINAL',
+      'HALF_YEARLY',
+      'OTHER',
+    ];
 
+    const statusDefaults = <String>[
+      'DRAFT',
+      'UPCOMING',
+      'SCHEDULED',
+      'PUBLISHED',
+      'COMPLETED',
+      'CANCELLED',
+    ];
+
+    String examType = (exam?.examType.trim().isNotEmpty == true)
+        ? exam!.examType.trim().toUpperCase()
+        : 'UNIT_TEST';
+
+    String status = (exam?.status.trim().isNotEmpty == true)
+        ? exam!.status.trim().toUpperCase()
+        : 'DRAFT';
+
+    // Existing backend value options lo lekapoyina,
+    // edit dialog crash avvakunda current value ni include cheyyali.
+    final examTypeOptions = <String>{...examTypeDefaults, examType}.toList();
+
+    final statusOptions = <String>{...statusDefaults, status}.toList();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -664,6 +694,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
+
                       TextField(
                         controller: descriptionController,
                         maxLines: 3,
@@ -673,6 +704,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
+
                       Row(
                         children: [
                           Expanded(
@@ -699,25 +731,43 @@ class _ExamsScreenState extends State<ExamsScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
+
+                      // Exam Type Dropdown
                       DropdownButtonFormField<String>(
-                        value: examType,
+                        initialValue: examType,
+                        isExpanded: true,
                         decoration: _inputDecoration(
                           label: 'Exam Type',
                           icon: Icons.category_outlined,
                         ),
                         items:
-                            const [
+                            [
                               'UNIT_TEST',
                               'PERIODIC_TEST',
+                              'MID',
                               'MID_TERM',
                               'ANNUAL',
                               'TERMINAL',
                               'HALF_YEARLY',
                               'OTHER',
-                            ].map((item) {
+                              if (![
+                                'UNIT_TEST',
+                                'PERIODIC_TEST',
+                                'MID',
+                                'MID_TERM',
+                                'ANNUAL',
+                                'TERMINAL',
+                                'HALF_YEARLY',
+                                'OTHER',
+                              ].contains(examType))
+                                examType,
+                            ].toSet().map((item) {
                               return DropdownMenuItem<String>(
                                 value: item,
-                                child: Text(_prettyEnum(item)),
+                                child: Text(
+                                  _prettyEnum(item),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               );
                             }).toList(),
                         onChanged: (value) {
@@ -729,24 +779,39 @@ class _ExamsScreenState extends State<ExamsScreen> {
                         },
                       ),
                       const SizedBox(height: 14),
+
+                      // Status Dropdown
                       DropdownButtonFormField<String>(
-                        value: status,
+                        initialValue: status,
+                        isExpanded: true,
                         decoration: _inputDecoration(
                           label: 'Status',
                           icon: Icons.flag_outlined,
                         ),
                         items:
-                            const [
+                            [
                               'DRAFT',
                               'UPCOMING',
                               'SCHEDULED',
                               'PUBLISHED',
                               'COMPLETED',
                               'CANCELLED',
-                            ].map((item) {
+                              if (![
+                                'DRAFT',
+                                'UPCOMING',
+                                'SCHEDULED',
+                                'PUBLISHED',
+                                'COMPLETED',
+                                'CANCELLED',
+                              ].contains(status))
+                                status,
+                            ].toSet().map((item) {
                               return DropdownMenuItem<String>(
                                 value: item,
-                                child: Text(_prettyEnum(item)),
+                                child: Text(
+                                  _prettyEnum(item),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               );
                             }).toList(),
                         onChanged: (value) {
@@ -761,6 +826,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
                   ),
                 ),
               ),
+
               actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
               actions: [
                 TextButton(

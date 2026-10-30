@@ -8,6 +8,11 @@ class StudentFeeModel {
   final double totalAmount;
   final double paidAmount;
   final double pendingAmount;
+  final double discountValue;
+  final double discountAmount;
+  final double payableAmount;
+  final String discountType;
+  final String discountReason;
   final String dueDate;
 
   StudentFeeModel({
@@ -21,7 +26,12 @@ class StudentFeeModel {
     required this.paidAmount,
     required this.pendingAmount,
     required this.dueDate,
-  });
+    this.discountType = 'NONE',
+    this.discountValue = 0,
+    this.discountAmount = 0,
+    double? payableAmount,
+    this.discountReason = '',
+  }) : payableAmount = payableAmount ?? (totalAmount - discountAmount);
 
   factory StudentFeeModel.fromJson(Map<String, dynamic> json) {
     return StudentFeeModel(
@@ -35,34 +45,29 @@ class StudentFeeModel {
       paidAmount: _toDouble(json['paidAmount']),
       pendingAmount: _toDouble(json['pendingAmount']),
       dueDate: json['dueDate']?.toString() ?? '',
+      discountType: json['discountType']?.toString() ?? 'NONE',
+      discountValue: _toDouble(json['discountValue']),
+      discountAmount: _toDouble(json['discountAmount']),
+      payableAmount: json['payableAmount'] == null
+          ? null
+          : _toDouble(json['payableAmount']),
+      discountReason: json['discountReason']?.toString() ?? '',
     );
   }
 
   static int? _toInt(dynamic value) {
     if (value == null) return null;
-
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
+    if (value is int) return value;
+    if (value is num) return value.toInt();
     return int.tryParse(value.toString());
   }
 
   static double _toDouble(dynamic value) {
     if (value == null) return 0;
-
-    if (value is num) {
-      return value.toDouble();
-    }
-
+    if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0;
   }
 }
-
 
 class FeePaymentModel {
   final int? id;

@@ -39,10 +39,7 @@ extension AdminDashboardActivityUI on _AdminDashboardScreenState {
         const SizedBox(height: 5),
         const Text(
           'Jump directly to frequently used school tools.',
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 13,
-          ),
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
         ),
         const SizedBox(height: 16),
         LayoutBuilder(
@@ -50,11 +47,10 @@ extension AdminDashboardActivityUI on _AdminDashboardScreenState {
             final columns = constraints.maxWidth >= 1000
                 ? 4
                 : constraints.maxWidth >= 560
-                    ? 2
-                    : 1;
+                ? 2
+                : 1;
 
-            final width =
-                (constraints.maxWidth - (columns - 1) * 14) / columns;
+            final width = (constraints.maxWidth - (columns - 1) * 14) / columns;
 
             return Wrap(
               spacing: 14,
@@ -82,17 +78,17 @@ extension AdminDashboardActivityUI on _AdminDashboardScreenState {
                     onTap: () => _onMenuSelected(2),
                   ),
                 ),
-                SizedBox(
-                  width: width,
-                  child: _quickActionCard(
-                    title: 'MCQ Tests',
-                    subtitle: 'Manage online tests',
-                    icon: Icons.quiz_rounded,
-                    color: const Color(0xFF7C3AED),
-                    background: const Color(0xFFF5F3FF),
-                    onTap: () => _onMenuSelected(11),
-                  ),
-                ),
+                // SizedBox(
+                //   width: width,
+                //   child: _quickActionCard(
+                //     title: 'MCQ Tests',
+                //     subtitle: 'Manage online tests',
+                //     icon: Icons.quiz_rounded,
+                //     color: const Color(0xFF7C3AED),
+                //     background: const Color(0xFFF5F3FF),
+                //     onTap: () => _onMenuSelected(11),
+                //   ),
+                // ),
                 SizedBox(
                   width: width,
                   child: _quickActionCard(
@@ -102,6 +98,18 @@ extension AdminDashboardActivityUI on _AdminDashboardScreenState {
                     color: const Color(0xFFD97706),
                     background: const Color(0xFFFFFBEB),
                     onTap: () => _onMenuSelected(13),
+                  ),
+                ),
+
+                SizedBox(
+                  width: width,
+                  child: _quickActionCard(
+                    title: 'Teacher Leaves',
+                    subtitle: 'View teacher leave applications',
+                    icon: Icons.event_note_rounded,
+                    color: const Color(0xFF7C3AED),
+                    background: const Color(0xFFF5F3FF),
+                    onTap: () => _onMenuSelected(21),
                   ),
                 ),
               ],

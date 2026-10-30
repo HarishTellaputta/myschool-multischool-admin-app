@@ -36,7 +36,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   // ============================================================
   // PARENT
   // ============================================================
-  ApiClient apiClient=ApiClient();
+  ApiClient apiClient = ApiClient();
   late final ReportCardService _reportCardService;
   Parent? parent;
   bool isParentLoading = false;
@@ -78,17 +78,17 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   // INIT
   // ============================================================
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  _reportCardService = ReportCardService(ApiClient());
+    _reportCardService = ReportCardService(ApiClient());
 
-  _loadParentDetails();
-  _loadPendingFees();
-  _loadAttendance();
-  _loadExamResults();
-}
+    _loadParentDetails();
+    _loadPendingFees();
+    _loadAttendance();
+    _loadExamResults();
+  }
 
   // ============================================================
   // PARENT
@@ -142,6 +142,12 @@ void initState() {
     final studentId = widget.student.id;
 
     if (studentId == null) {
+      if (!mounted) return;
+
+      setState(() {
+        feeError = 'Student ID is not available.';
+        isFeeLoading = false;
+      });
       return;
     }
 
@@ -153,7 +159,8 @@ void initState() {
     try {
       final service = FeeService();
 
-      final result = await service.getStudentFees(studentId, pending: true);
+      // Load ALL fee records, including fully paid fees.
+      final result = await service.getStudentFees(studentId, pending: false);
 
       if (!mounted) return;
 
@@ -161,16 +168,15 @@ void initState() {
         pendingFees = result;
         isFeeLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
 
       setState(() {
         isFeeLoading = false;
-        feeError = 'Unable to load fee details';
+        feeError = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
-
   // ============================================================
   // ATTENDANCE
   //
@@ -1801,7 +1807,7 @@ void initState() {
       iconBackground: const Color(0xFFFFF7ED),
       iconColor: const Color(0xFFD97706),
       title: 'Fee Information',
-      subtitle: 'Current pending fees',
+      subtitle: 'Paid and pending fee details',
       child: Column(
         children: [
           if (isFeeLoading)
@@ -1839,7 +1845,7 @@ void initState() {
                 Expanded(
                   child: _amountMetric(
                     'Paid Amount',
-                    paidAmount.toString(),
+                    '₹${paidAmount.toStringAsFixed(2)}',
                     const Color(0xFFD97706),
                   ),
                 ),
@@ -1861,21 +1867,353 @@ void initState() {
 
   Future<void> _showFeeDetails() async {
     if (pendingFees.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No fee records found for this student.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FeeDetailsScreen(record: pendingFees.first),
-      ),
+    final selectedFee = await showModalBottomSheet<StudentFeeModel>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.55),
+      builder: (sheetContext) {
+        final screenHeight = MediaQuery.of(sheetContext).size.height;
+
+        return Container(
+          height: screenHeight * 0.72,
+          decoration: const BoxDecoration(
+            color: Color(0xFFF5F7FC),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              const SizedBox(height: 12),
+              Container(
+                width: 42,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1D5DB),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+
+              // Premium header
+              Container(
+                margin: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withOpacity(0.22),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.receipt_long_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Fee Details',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            '${pendingFees.length} fee record'
+                            '${pendingFees.length == 1 ? '' : 's'} available',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.85),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.15),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Section title
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Select a fee record',
+                      style: TextStyle(
+                        color: Color(0xFF172033),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8EEFF),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          color: Color(0xFF2563EB),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Fee records
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+                  itemCount: pendingFees.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final fee = pendingFees[index];
+
+                    final double pending = fee.pendingAmount;
+                    final bool isPaid = pending <= 0;
+                    final double total = fee.totalAmount;
+                    final double paid = fee.paidAmount;
+
+                    return Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          Navigator.pop(sheetContext, fee);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE5EAF3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE8EEFF),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: const Icon(
+                                      Icons.account_balance_wallet_rounded,
+                                      color: Color(0xFF2563EB),
+                                      size: 23,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      fee.feeName,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFF172033),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isPaid
+                                          ? const Color(0xFFDCFCE7)
+                                          : const Color(0xFFFFF0D6),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      isPaid ? 'PAID' : 'PENDING',
+                                      style: TextStyle(
+                                        color: isPaid
+                                            ? const Color(0xFF15803D)
+                                            : const Color(0xFFB45309),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 18),
+
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _feeAmountItem(
+                                      label: 'Total Fee',
+                                      amount: total,
+                                      color: const Color(0xFF172033),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _feeAmountItem(
+                                      label: 'Paid',
+                                      amount: paid,
+                                      color: const Color(0xFF16A34A),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _feeAmountItem(
+                                      label: 'Pending',
+                                      amount: pending,
+                                      color: isPaid
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFFEA580C),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 13,
+                                  vertical: 11,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F6FF),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'View fee details',
+                                      style: TextStyle(
+                                        color: Color(0xFF2563EB),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    SizedBox(width: 6),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: Color(0xFF2563EB),
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
 
-    if (mounted) {
-      _loadPendingFees();
-    }
+    if (selectedFee == null || !mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => FeeDetailsScreen(record: selectedFee)),
+    );
+
+    if (!mounted) return;
+    await _loadPendingFees();
   }
-  // ============================================================
+
+  Widget _feeAmountItem({
+    required String label,
+    required double amount,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF7B8498),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '₹${amount.toStringAsFixed(2)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
   // CONTACT
   // ============================================================
 

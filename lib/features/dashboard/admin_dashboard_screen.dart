@@ -37,6 +37,8 @@ import '../reports/screens/reports_screen.dart';
 import '../birthdays/birthdays_screen.dart';
 import 'package:smartkids_admin/excel_reports/excel_reports_screen.dart';
 
+import '../teachers/teacher_leaves_screen.dart';
+
 // Dashboard UI is split into separate files.
 part 'admin_dashboard_header.dart';
 part 'dashboard_layout.part.dart';
@@ -456,6 +458,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
       case 20:
         return const ExcelReportsScreen();
+
+      case 21:
+        return const TeacherLeavesScreen();
 
       default:
         return SingleChildScrollView(
